@@ -20,17 +20,17 @@ DS_UM_PER_VOX = 0.3
 AREA_SCALE = DS_UM_PER_VOX ** 2
 
 WT_CONDITION = "wt_divMean0Stdev26"
-WT_SIM_ID = "sim61"
+WT_SIM_ID = "vcv1_noreg"
 WT_VCV = 1
 
 MUD_CONDITION = "mudmut_divMean0Stdev26_rotMean0Stdev30"
-MUD_SIM_ID = "sim51"
+MUD_SIM_ID = "vcv0_noreg"
 MUD_VCV = 0
 
 REPRESENTATIVE_PERCENTILES = (0.10, 0.50, 0.90)
 
-SIM_METRICS_CSV = REPO_ROOT / "data" / "sim" / "processed_div26" / "sim_metrics_last.csv"
-SIM_RUN_INDEX_CSV = REPO_ROOT / "data" / "sim" / "processed_div26" / "sim_run_index.csv"
+SIM_METRICS_CSV = REPO_ROOT / "data" / "sim" / "processed_sweep" / "sim_metrics_last.csv"
+SIM_RUN_INDEX_CSV = REPO_ROOT / "data" / "sim" / "processed_sweep" / "sim_run_index.csv"
 EXP_SUMMARY_CSV = REPO_ROOT / "data" / "exp" / "processed" / "exp_summary.csv"
 EXP_INDEX_CSV = REPO_ROOT / "data" / "exp" / "processed" / "lineage_index.csv"
 EXP_ANALYSIS_DIR = REPO_ROOT / "data" / "exp" / "processed" / "analysis"
@@ -324,7 +324,7 @@ def regulatory_hypothesis_panel(
 
 
 def confirm_sim51_configuration() -> dict[str, object]:
-    config_path = REPO_ROOT / "data" / "sim" / "bioparams_div26_sweep" / MUD_CONDITION / MUD_SIM_ID / "2026-04-26-biosim51_mudmut_volume_none_detdiff.json"
+    config_path = REPO_ROOT / "data" / "sim" / "sweep" / MUD_CONDITION / MUD_SIM_ID / "2026-04-26-biosim51_mudmut_volume_none_detdiff.json"
     config = json.loads(config_path.read_text())
     pop = config["populations"]["fly-stem-mudmut"]
     potts = config["potts"]

@@ -1,8 +1,8 @@
 UV := uv run python
 
-EXP_WRL_DIR    := data/exp/wrl_files
+EXP_WRL_DIR    := data/exp/raw
 EXP_PROC_DIR   := data/exp/processed
-SIM_SWEEP_ROOT := data/sim/wt_plane_rotation_decoupling
+SIM_SWEEP_ROOT := data/sim/decoupling
 SIM_PROC_DIR   := data/sim/processed_decoupling
 
 .PHONY: all preprocess-data preprocess-simdata \

@@ -35,9 +35,9 @@ every mesh NPZ as a scalar so its value is documented alongside the data, but
 ### Input
 
 ```
-data/exp/wrl_files/
-    Control/    lobe*_control_lineages.wrl, *_dpn.wrl, *_pros.wrl
-    Mud/        lobe*_mud_lineages.wrl, *_dpn.wrl, *_pros.wrl
+data/exp/raw/
+    wt/    lobe*_control_lineages.wrl, *_dpn.wrl, *_pros.wrl
+    mudmut/        lobe*_mud_lineages.wrl, *_dpn.wrl, *_pros.wrl
     Nanobody/   lobe*_Nanobody_lineages.wrl, *_dpn.wrl, *_pros.wrl
 ```
 
@@ -139,7 +139,7 @@ link between the index CSV and the stacked geo tensors.
 ### CLI options
 
 ```
---wrl-dir     PATH    default: data/exp/wrl_files
+--wrl-dir     PATH    default: data/exp/raw
 --out-dir     PATH    default: data/exp/processed
 --genotypes   LIST    filter to subset (wt, mudmut, nanobody)
 --lobes       LIST    filter to subset of lobe names
@@ -212,7 +212,7 @@ The `2d-post` view is unavailable for rejected lineages (they have no
   New-style names include a genotype prefix and an optional rot suffix:
   `wt_divMean0Stdev26`, `mudmut_divMean0Stdev26_rotMean0Stdev30`.
   Old-style names (e.g. `divMean0Stdev30_rotMean0Stdev30`) also parse correctly.
-  Active sweep root: `data/sim/bioparams_div26_sweep`.
+  Active sweep root: `data/sim/sweep`.
 - **Sim ID** = subdirectory name (e.g. `sim41`)
 - **Run ID** = 4-digit field extracted by `r".*_([0-9]{4})_([0-9]{6})\.CELLS\.json$"`
 - **Time ID** = 6-digit field from same pattern
@@ -303,8 +303,8 @@ are omitted.
 Active invocation:
 ```
 uv run python scripts/preprocess_sim.py \
-    --sweep-root data/sim/bioparams_div26_sweep \
-    --out-dir data/sim/processed_div26
+    --sweep-root data/sim/sweep \
+    --out-dir data/sim/processed_sweep
 ```
 
 ---
@@ -402,7 +402,7 @@ nearest stored centroid from the mesh NPZ (`dpn_centroids_2d_px`,
 
 ### Simulation metrics
 
-**Run:** `python scripts/extract_metrics.py --kind sim --sweep-root data/sim/bioparams_div26_sweep --out-dir data/sim/processed_div26`
+**Run:** `python scripts/extract_metrics.py --kind sim --sweep-root data/sim/sweep --out-dir data/sim/processed_sweep`
 
 **Inputs:** all matched `*.CELLS.json` / `*.LOCATIONS.json` pairs under the
 sweep root, not only last timepoints.
@@ -462,7 +462,7 @@ missing that timepoint are omitted from the selected simulation output.
 
 ### Inputs
 
-- simulation input: `data/sim/processed_div26/sim_timepoint_metrics.csv`
+- simulation input: `data/sim/processed_sweep/sim_timepoint_metrics.csv`
 - experimental input: `data/exp/processed/metrics.csv`
 
 The simulation metrics CSV can be large, so this step reads only the columns it
@@ -477,8 +477,8 @@ It does not load `cells_path` or `locs_path`.
 Default outputs for `--timepoint last`:
 
 ```text
-data/sim/processed_div26/sim_metrics_last.csv
-data/sim/processed_div26/sim_summary_last.csv
+data/sim/processed_sweep/sim_metrics_last.csv
+data/sim/processed_sweep/sim_summary_last.csv
 data/exp/processed/exp_summary.csv
 ```
 
@@ -558,7 +558,7 @@ notebooks and does not implement scalar similarity scoring.
 
 ### Inputs
 
-- simulation input: `data/sim/processed_div26/sim_metrics_last.csv`
+- simulation input: `data/sim/processed_sweep/sim_metrics_last.csv`
 - experimental input: `data/exp/processed/exp_summary.csv`
 
 The main simulation distributions come from `sim_metrics_last.csv`, not from
@@ -636,9 +636,9 @@ those blocks.
 By default, figures are written under:
 
 ```text
-data/sim/processed_div26/figures/comparisons/intra/
-data/sim/processed_div26/figures/comparisons/inter_div_priority/
-data/sim/processed_div26/figures/comparisons/inter_rot_priority/
+data/sim/processed_sweep/figures/comparisons/intra/
+data/sim/processed_sweep/figures/comparisons/inter_div_priority/
+data/sim/processed_sweep/figures/comparisons/inter_rot_priority/
 ```
 
 Default filenames encode the mode, fixed selector, metric, and scale.
