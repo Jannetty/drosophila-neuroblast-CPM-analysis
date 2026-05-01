@@ -4,7 +4,7 @@
 
 **Goal:** Archive unused ARCADE simulation setup files, rename remaining setup files from opaque numbered identifiers (sim41.xml, sim61.xml) to manuscript-role names (vcv1_noreg.xml, vcv1_vol_abm.xml), and produce a directory structure that mirrors the data refactor in plan 9_DATA_REFACTOR.md so setup files and output data remain obviously paired.
 
-**Architecture:** Three stages — (1) archive unused and calibration setup files; (2) create the new `sweep/` and `decoupling/` directory structure with renamed files; (3) update the shell scripts used to run the kept simulations. The archive step runs first. Later tasks assume each prior task is complete. All work is in `~/bagherilab/ARCADE/`.
+**Architecture:** Four stages — (1) consolidate calibration setup files into a top-level `calibration/` directory; (2) archive unused sweep setup files; (3) create the new `sweep/` and `decoupling/` directory structure with renamed files; (4) update the shell scripts used to run the kept simulations. The archive step runs first. Later tasks assume each prior task is complete. All work is in `~/bagherilab/ARCADE/`.
 
 **Tech Stack:** Shell (mv, cp, find), Python (for batch XML series-name update — optional). No new source code produced.
 
@@ -45,13 +45,13 @@ This plan produces a matching ARCADE layout:
 
 ```
 ARCADE/
-├── calibration_wt_nb_growth_rate/
+├── calibration_wt_nb_growth_rate/             ← KEEP (consolidate into calibration/)
 │   └── cal{01-05}/cal{01-05}.xml           (5 files)
-├── calibration_wt_offset50_divMean0Stdev26/
+├── calibration_wt_offset50_divMean0Stdev26/   ← KEEP (consolidate into calibration/)
 │   └── sim{01-08}/sim{01-08}.xml           (8 files)
-├── calibration_wt_offset50_v2_divMean0Stdev26/
+├── calibration_wt_offset50_v2_divMean0Stdev26/ ← KEEP (consolidate into calibration/)
 │   └── sim{01-05}/sim{01-05}.xml           (5 files)
-├── calibration_wt_offset50_v3_divMean0Stdev26/
+├── calibration_wt_offset50_v3_divMean0Stdev26/ ← KEEP (consolidate into calibration/)
 │   └── sim{01-04}/sim{01-04}.xml           (4 files)
 ├── bioparams_setupfiles_mudmut_divMean0Stdev26_rotMean0Stdev30/  ← KEEP
 │   └── sim{41-45,51-55}/sim{41-45,51-55}.xml
@@ -95,12 +95,12 @@ ARCADE/
 
 ```
 ~/bagherilab/ARCADE/
+├── calibration/                               ← consolidated from 4 root-level calibration_* dirs
+│   ├── calibration_wt_nb_growth_rate/
+│   ├── calibration_wt_offset50_divMean0Stdev26/
+│   ├── calibration_wt_offset50_v2_divMean0Stdev26/
+│   └── calibration_wt_offset50_v3_divMean0Stdev26/
 ├── setup_file_archive/
-│   ├── calibration/
-│   │   ├── calibration_wt_nb_growth_rate/
-│   │   ├── calibration_wt_offset50_divMean0Stdev26/
-│   │   ├── calibration_wt_offset50_v2_divMean0Stdev26/
-│   │   └── calibration_wt_offset50_v3_divMean0Stdev26/
 │   ├── sweep_unused_conditions/              ← 28 bioparams_setupfiles_* dirs
 │   └── mudmut_noadhesion_extra_sims/         ← sim41,42,44,51-55 from noadhesion dir
 │
@@ -189,30 +189,30 @@ Shell scripts for non-manuscript conditions (`run_bioparams_rotation_sweep.sh`, 
 
 ## Tasks
 
-### Task 1: Archive calibration setup files
+### Task 1: Consolidate calibration setup files
 
-All four calibration directories were exploratory runs used to tune parameters before the main sweep. None of their outputs appear in manuscript or supplement figures.
+The four `calibration_*` directories at the ARCADE root are kept (not archived) because their outputs may be needed for supplement figures. Move them under a single top-level `calibration/` directory for tidiness.
 
-- [ ] **Step 1: Create archive directory**
+- [ ] **Step 1: Create calibration directory**
 
 ```bash
 cd ~/bagherilab/ARCADE
-mkdir -p setup_file_archive/calibration
+mkdir -p calibration
 ```
 
 - [ ] **Step 2: Move calibration directories**
 
 ```bash
-mv calibration_wt_nb_growth_rate         setup_file_archive/calibration/
-mv calibration_wt_offset50_divMean0Stdev26  setup_file_archive/calibration/
-mv calibration_wt_offset50_v2_divMean0Stdev26 setup_file_archive/calibration/
-mv calibration_wt_offset50_v3_divMean0Stdev26 setup_file_archive/calibration/
+mv calibration_wt_nb_growth_rate              calibration/
+mv calibration_wt_offset50_divMean0Stdev26    calibration/
+mv calibration_wt_offset50_v2_divMean0Stdev26 calibration/
+mv calibration_wt_offset50_v3_divMean0Stdev26 calibration/
 ```
 
 - [ ] **Step 3: Verify**
 
 ```bash
-ls setup_file_archive/calibration/
+ls calibration/
 ```
 
 Expected:
@@ -224,7 +224,7 @@ calibration_wt_offset50_v3_divMean0Stdev26
 ```
 
 ```bash
-ls calibration_* 2>/dev/null && echo "ERROR: stale dirs remain" || echo "OK"
+ls calibration_* 2>/dev/null && echo "ERROR: stale dirs remain at root" || echo "OK"
 ```
 
 Expected: `OK`
@@ -710,11 +710,11 @@ Expected: all `OK` (run this after plan 9_DATA_REFACTOR.md has also been execute
 
 | Archived path (in ARCADE) | Original path | Reason |
 |---|---|---|
-| `setup_file_archive/calibration/calibration_wt_*` | `calibration_wt_*/` (4 dirs) | Parameter calibration runs; not manuscript figures |
 | `setup_file_archive/sweep_unused_conditions/` (28 dirs) | `bioparams_setupfiles_*/` other conditions | Not used in manuscript or supplement |
 | `setup_file_archive/mudmut_noadhesion_extra_sims/` (8 sim dirs) | `bioparams_setupfiles_*_noadhesion/sim41,42,44,51-55/` | Only vcv1_vol_abm and vcv1_vol_pde used in Fig 5 |
 
-**Kept (22 sweep XML + 24 decoupling XML = 46 files total):**
+**Kept (22 sweep XML + 24 decoupling XML + 22 calibration XML = 68 files total):**
+- `calibration/` — all four calibration studies consolidated from root (supplement figures)
 - `sweep/wt_divMean0Stdev26/` — all 10 VCV configurations (main figures + WT VCV=0 supplement)
 - `sweep/mudmut_divMean0Stdev26_rotMean0Stdev30/` — all 10 VCV configurations (Figs 3, 4)
 - `sweep/mudmut_divMean0Stdev26_rotMean0Stdev30_noadhesion/` — vcv1_vol_abm and vcv1_vol_pde only (Fig 5)
