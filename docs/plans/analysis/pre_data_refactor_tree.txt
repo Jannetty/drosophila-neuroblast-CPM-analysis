@@ -1,0 +1,1306 @@
+# Pre-refactor data directory snapshot
+# Generated: 2026-05-01
+# Repo: neurogen-plane-rotation-analysis
+#
+# The data/ directory is gitignored. This file records its exact structure
+# before the data refactor described in docs/plans/design_plans/9_DATA_REFACTOR.md.
+# Raw JSON files inside sim directories follow the pattern:
+#   <date>-<simid>_<condition>_<run>_<timepoint>.CELLS.json / .LOCATIONS.json
+# and are omitted below; only directories are shown for those subtrees.
+# All files are shown for processed/ and exp/processed/ directories.
+
+========================================
+FULL DIRECTORY TREE (directories only)
+========================================
+data
+├── exp
+│   ├── processed
+│   │   ├── analysis
+│   │   └── meshes
+│   │       ├── mudmut
+│   │       ├── nanobody
+│   │       ├── rejected
+│   │       │   ├── mudmut
+│   │       │   ├── nanobody
+│   │       │   └── wt
+│   │       └── wt
+│   ├── rotation_csvs
+│   └── wrl_files
+│       ├── Control
+│       ├── Mud
+│       └── Nanobody
+└── sim
+    ├── archive
+    │   ├── bioparams_div26_sweep
+    │   │   ├── mudmut_divMean0Stdev26_rotMean0Stdev0
+    │   │   │   ├── sim41
+    │   │   │   ├── sim42
+    │   │   │   ├── sim43
+    │   │   │   ├── sim44
+    │   │   │   ├── sim45
+    │   │   │   ├── sim51
+    │   │   │   ├── sim52
+    │   │   │   ├── sim53
+    │   │   │   ├── sim54
+    │   │   │   └── sim55
+    │   │   ├── mudmut_divMean0Stdev26_rotMean0Stdev30
+    │   │   │   ├── sim41
+    │   │   │   ├── sim42
+    │   │   │   ├── sim43
+    │   │   │   ├── sim44
+    │   │   │   ├── sim45
+    │   │   │   ├── sim51
+    │   │   │   ├── sim52
+    │   │   │   ├── sim53
+    │   │   │   ├── sim54
+    │   │   │   └── sim55
+    │   │   ├── mudmut_divMean0Stdev26_rotMean11Stdev30
+    │   │   │   ├── sim41
+    │   │   │   ├── sim42
+    │   │   │   ├── sim43
+    │   │   │   ├── sim44
+    │   │   │   ├── sim45
+    │   │   │   ├── sim51
+    │   │   │   ├── sim52
+    │   │   │   ├── sim53
+    │   │   │   ├── sim54
+    │   │   │   └── sim55
+    │   │   ├── mudmut_divMean11Stdev26_rotMean0Stdev0
+    │   │   │   ├── sim41
+    │   │   │   ├── sim42
+    │   │   │   ├── sim43
+    │   │   │   ├── sim44
+    │   │   │   ├── sim45
+    │   │   │   ├── sim51
+    │   │   │   ├── sim52
+    │   │   │   ├── sim53
+    │   │   │   ├── sim54
+    │   │   │   └── sim55
+    │   │   ├── mudmut_divMean11Stdev26_rotMean0Stdev30
+    │   │   │   ├── sim41
+    │   │   │   ├── sim42
+    │   │   │   ├── sim43
+    │   │   │   ├── sim44
+    │   │   │   ├── sim45
+    │   │   │   ├── sim51
+    │   │   │   ├── sim52
+    │   │   │   ├── sim53
+    │   │   │   ├── sim54
+    │   │   │   └── sim55
+    │   │   ├── mudmut_divMean11Stdev26_rotMean11Stdev30
+    │   │   │   ├── sim41
+    │   │   │   ├── sim42
+    │   │   │   ├── sim43
+    │   │   │   ├── sim44
+    │   │   │   ├── sim45
+    │   │   │   ├── sim51
+    │   │   │   ├── sim52
+    │   │   │   ├── sim53
+    │   │   │   ├── sim54
+    │   │   │   └── sim55
+    │   │   ├── wt_divMean0Stdev26
+    │   │   │   ├── sim61
+    │   │   │   ├── sim62
+    │   │   │   ├── sim63
+    │   │   │   ├── sim64
+    │   │   │   ├── sim65
+    │   │   │   ├── sim71
+    │   │   │   ├── sim72
+    │   │   │   ├── sim73
+    │   │   │   ├── sim74
+    │   │   │   └── sim75
+    │   │   └── wt_divMean11Stdev26
+    │   │       ├── sim61
+    │   │       ├── sim62
+    │   │       ├── sim63
+    │   │       ├── sim64
+    │   │       ├── sim65
+    │   │       ├── sim71
+    │   │       ├── sim72
+    │   │       ├── sim73
+    │   │       ├── sim74
+    │   │       └── sim75
+    │   ├── processed
+    │   └── processed_div26
+    │       └── figures
+    │           └── analysis
+    ├── bioparams_div26_sweep
+    │   ├── mudmut_divMean0Stdev26_rotMean0Stdev0
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean0Stdev26_rotMean0Stdev0_noadhesion
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean0Stdev26_rotMean0Stdev30
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean0Stdev26_rotMean0Stdev30_noadhesion
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean0Stdev26_rotMean11Stdev30
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean0Stdev26_rotMean11Stdev30_noadhesion
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean0Stdev26_rotMean45Stdev30
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean0Stdev26_rotMean45Stdev30_noadhesion
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean0Stdev26_rotMean90Stdev30
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean0Stdev26_rotMean90Stdev30_noadhesion
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean11Stdev26_rotMean0Stdev0
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean11Stdev26_rotMean0Stdev0_noadhesion
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean11Stdev26_rotMean0Stdev30
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean11Stdev26_rotMean0Stdev30_noadhesion
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean11Stdev26_rotMean11Stdev30
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean11Stdev26_rotMean11Stdev30_noadhesion
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean45Stdev26_rotMean0Stdev30
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean45Stdev26_rotMean0Stdev30_noadhesion
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean45Stdev26_rotMean45Stdev30
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean45Stdev26_rotMean45Stdev30_noadhesion
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean90Stdev26_rotMean0Stdev30
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean90Stdev26_rotMean0Stdev30_noadhesion
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean90Stdev26_rotMean45Stdev30
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── mudmut_divMean90Stdev26_rotMean45Stdev30_noadhesion
+    │   │   ├── sim41
+    │   │   ├── sim42
+    │   │   ├── sim43
+    │   │   ├── sim44
+    │   │   ├── sim45
+    │   │   ├── sim51
+    │   │   ├── sim52
+    │   │   ├── sim53
+    │   │   ├── sim54
+    │   │   └── sim55
+    │   ├── wt_divMean0Stdev26
+    │   │   ├── sim61
+    │   │   ├── sim62
+    │   │   ├── sim63
+    │   │   ├── sim64
+    │   │   ├── sim65
+    │   │   ├── sim71
+    │   │   ├── sim72
+    │   │   ├── sim73
+    │   │   ├── sim74
+    │   │   └── sim75
+    │   ├── wt_divMean0Stdev26_yoffset50
+    │   │   ├── sim61
+    │   │   ├── sim62
+    │   │   ├── sim63
+    │   │   ├── sim64
+    │   │   ├── sim65
+    │   │   ├── sim71
+    │   │   ├── sim72
+    │   │   ├── sim73
+    │   │   ├── sim74
+    │   │   └── sim75
+    │   ├── wt_divMean11Stdev26
+    │   │   ├── sim61
+    │   │   ├── sim62
+    │   │   ├── sim63
+    │   │   ├── sim64
+    │   │   ├── sim65
+    │   │   ├── sim71
+    │   │   ├── sim72
+    │   │   ├── sim73
+    │   │   ├── sim74
+    │   │   └── sim75
+    │   ├── wt_divMean45Stdev26
+    │   │   ├── sim61
+    │   │   ├── sim62
+    │   │   ├── sim63
+    │   │   ├── sim64
+    │   │   ├── sim65
+    │   │   ├── sim71
+    │   │   ├── sim72
+    │   │   ├── sim73
+    │   │   ├── sim74
+    │   │   └── sim75
+    │   ├── wt_divMean45Stdev26_yoffset50
+    │   │   ├── sim61
+    │   │   ├── sim62
+    │   │   ├── sim63
+    │   │   ├── sim64
+    │   │   ├── sim65
+    │   │   ├── sim71
+    │   │   ├── sim72
+    │   │   ├── sim73
+    │   │   ├── sim74
+    │   │   └── sim75
+    │   ├── wt_divMean90Stdev26
+    │   │   ├── sim61
+    │   │   ├── sim62
+    │   │   ├── sim63
+    │   │   ├── sim64
+    │   │   ├── sim65
+    │   │   ├── sim71
+    │   │   ├── sim72
+    │   │   ├── sim73
+    │   │   ├── sim74
+    │   │   └── sim75
+    │   └── wt_divMean90Stdev26_yoffset50
+    │       ├── sim61
+    │       ├── sim62
+    │       ├── sim63
+    │       ├── sim64
+    │       ├── sim65
+    │       ├── sim71
+    │       ├── sim72
+    │       ├── sim73
+    │       ├── sim74
+    │       └── sim75
+    ├── processed_adhesion
+    │   └── figures
+    │       └── analysis
+    ├── processed_decoupling
+    ├── processed_div26
+    │   └── figures
+    │       ├── analysis
+    │       └── yoffset_comparison
+    └── wt_plane_rotation_decoupling
+        ├── wt_divMean0Stdev26
+        │   ├── sim61
+        │   └── sim71
+        ├── wt_divMean0Stdev26_relrot
+        │   ├── sim61
+        │   └── sim71
+        ├── wt_divMean0Stdev26_yoffset50
+        │   ├── sim61
+        │   └── sim71
+        ├── wt_divMean0Stdev26_yoffset62
+        │   ├── sim61
+        │   └── sim71
+        ├── wt_divMean0Stdev26_yoffset75
+        │   ├── sim61
+        │   └── sim71
+        ├── wt_divMean0Stdev35
+        │   ├── sim61
+        │   └── sim71
+        ├── wt_divMean0Stdev45
+        │   ├── sim61
+        │   └── sim71
+        ├── wt_divMean0Stdev60
+        │   ├── sim61
+        │   └── sim71
+        ├── wt_divMean0Stdev75
+        │   ├── sim61
+        │   └── sim71
+        ├── wt_divMean0Stdev90
+        │   ├── sim61
+        │   └── sim71
+        ├── wt_divMean45Stdev26_relrot
+        │   ├── sim61
+        │   └── sim71
+        └── wt_divMean90Stdev26_relrot
+            ├── sim61
+            └── sim71
+
+========================================
+FILES IN data/exp/processed/
+========================================
+data/exp/processed
+├── analysis
+│   ├── mudmut.npz
+│   ├── nanobody.npz
+│   └── wt.npz
+├── exp_summary.csv
+├── lineage_index.csv
+├── meshes
+│   ├── mudmut
+│   │   ├── lobe110_0.npz
+│   │   ├── lobe110_1.npz
+│   │   ├── lobe110_10.npz
+│   │   ├── lobe110_12.npz
+│   │   ├── lobe110_13.npz
+│   │   ├── lobe110_15.npz
+│   │   ├── lobe110_16.npz
+│   │   ├── lobe110_17.npz
+│   │   ├── lobe110_18.npz
+│   │   ├── lobe110_2.npz
+│   │   ├── lobe110_3.npz
+│   │   ├── lobe110_4.npz
+│   │   ├── lobe110_5.npz
+│   │   ├── lobe110_6.npz
+│   │   ├── lobe110_7.npz
+│   │   ├── lobe110_8.npz
+│   │   ├── lobe110_9.npz
+│   │   ├── lobe113_0.npz
+│   │   ├── lobe113_1.npz
+│   │   ├── lobe113_10.npz
+│   │   ├── lobe113_11.npz
+│   │   ├── lobe113_12.npz
+│   │   ├── lobe113_13.npz
+│   │   ├── lobe113_2.npz
+│   │   ├── lobe113_3.npz
+│   │   ├── lobe113_4.npz
+│   │   ├── lobe113_5.npz
+│   │   ├── lobe113_6.npz
+│   │   ├── lobe113_7.npz
+│   │   ├── lobe113_8.npz
+│   │   ├── lobe113_9.npz
+│   │   ├── lobe116_0.npz
+│   │   ├── lobe116_1.npz
+│   │   ├── lobe116_10.npz
+│   │   ├── lobe116_11.npz
+│   │   ├── lobe116_12.npz
+│   │   ├── lobe116_13.npz
+│   │   ├── lobe116_2.npz
+│   │   ├── lobe116_3.npz
+│   │   ├── lobe116_4.npz
+│   │   ├── lobe116_5.npz
+│   │   ├── lobe116_6.npz
+│   │   ├── lobe116_7.npz
+│   │   ├── lobe116_8.npz
+│   │   ├── lobe116_9.npz
+│   │   ├── lobe119_0.npz
+│   │   ├── lobe119_1.npz
+│   │   ├── lobe119_10.npz
+│   │   ├── lobe119_11.npz
+│   │   ├── lobe119_12.npz
+│   │   ├── lobe119_13.npz
+│   │   ├── lobe119_14.npz
+│   │   ├── lobe119_2.npz
+│   │   ├── lobe119_3.npz
+│   │   ├── lobe119_4.npz
+│   │   ├── lobe119_5.npz
+│   │   ├── lobe119_7.npz
+│   │   ├── lobe119_8.npz
+│   │   └── lobe119_9.npz
+│   ├── nanobody
+│   │   ├── lobe16_0.npz
+│   │   ├── lobe16_1.npz
+│   │   ├── lobe16_10.npz
+│   │   ├── lobe16_2.npz
+│   │   ├── lobe16_3.npz
+│   │   ├── lobe16_4.npz
+│   │   ├── lobe16_6.npz
+│   │   ├── lobe16_7.npz
+│   │   ├── lobe16_8.npz
+│   │   ├── lobe16_9.npz
+│   │   ├── lobe17_11.npz
+│   │   ├── lobe17_12.npz
+│   │   ├── lobe17_5.npz
+│   │   ├── lobe17_6.npz
+│   │   ├── lobe17_7.npz
+│   │   ├── lobe17_9.npz
+│   │   ├── lobe19_0.npz
+│   │   ├── lobe19_1.npz
+│   │   ├── lobe19_3.npz
+│   │   ├── lobe19_5.npz
+│   │   ├── lobe20_0.npz
+│   │   ├── lobe20_1.npz
+│   │   ├── lobe20_10.npz
+│   │   ├── lobe20_11.npz
+│   │   ├── lobe20_12.npz
+│   │   ├── lobe20_13.npz
+│   │   ├── lobe20_14.npz
+│   │   ├── lobe20_15.npz
+│   │   ├── lobe20_16.npz
+│   │   ├── lobe20_17.npz
+│   │   ├── lobe20_2.npz
+│   │   ├── lobe20_3.npz
+│   │   ├── lobe20_5.npz
+│   │   ├── lobe20_6.npz
+│   │   ├── lobe20_7.npz
+│   │   ├── lobe20_8.npz
+│   │   ├── lobe20_9.npz
+│   │   ├── lobe21_1.npz
+│   │   ├── lobe21_10.npz
+│   │   ├── lobe21_12.npz
+│   │   ├── lobe21_2.npz
+│   │   ├── lobe21_3.npz
+│   │   ├── lobe21_4.npz
+│   │   ├── lobe21_5.npz
+│   │   ├── lobe21_7.npz
+│   │   ├── lobe21_8.npz
+│   │   ├── lobe22_2.npz
+│   │   ├── lobe22_4.npz
+│   │   ├── lobe22_5.npz
+│   │   ├── lobe22_6.npz
+│   │   ├── lobe22_7.npz
+│   │   ├── lobe22_8.npz
+│   │   └── lobe22_9.npz
+│   ├── rejected
+│   │   ├── mudmut
+│   │   │   ├── lobe110_11.npz
+│   │   │   ├── lobe110_14.npz
+│   │   │   ├── lobe113_14.npz
+│   │   │   └── lobe119_6.npz
+│   │   ├── nanobody
+│   │   │   ├── lobe16_5.npz
+│   │   │   ├── lobe17_0.npz
+│   │   │   ├── lobe17_1.npz
+│   │   │   ├── lobe17_10.npz
+│   │   │   ├── lobe17_13.npz
+│   │   │   ├── lobe17_14.npz
+│   │   │   ├── lobe17_15.npz
+│   │   │   ├── lobe17_16.npz
+│   │   │   ├── lobe17_2.npz
+│   │   │   ├── lobe17_3.npz
+│   │   │   ├── lobe17_4.npz
+│   │   │   ├── lobe17_8.npz
+│   │   │   ├── lobe19_2.npz
+│   │   │   ├── lobe19_4.npz
+│   │   │   ├── lobe19_6.npz
+│   │   │   ├── lobe19_7.npz
+│   │   │   ├── lobe20_4.npz
+│   │   │   ├── lobe21_0.npz
+│   │   │   ├── lobe21_11.npz
+│   │   │   ├── lobe21_6.npz
+│   │   │   ├── lobe21_9.npz
+│   │   │   ├── lobe22_0.npz
+│   │   │   ├── lobe22_1.npz
+│   │   │   └── lobe22_3.npz
+│   │   └── wt
+│   │       ├── lobe1_1.npz
+│   │       ├── lobe1_8.npz
+│   │       ├── lobe13_1.npz
+│   │       ├── lobe13_12.npz
+│   │       ├── lobe13_14.npz
+│   │       ├── lobe13_15.npz
+│   │       ├── lobe13_16.npz
+│   │       ├── lobe13_17.npz
+│   │       ├── lobe13_19.npz
+│   │       ├── lobe15_0.npz
+│   │       ├── lobe15_2.npz
+│   │       ├── lobe15_4.npz
+│   │       ├── lobe15_6.npz
+│   │       ├── lobe2_1.npz
+│   │       ├── lobe2_11.npz
+│   │       ├── lobe2_14.npz
+│   │       ├── lobe2_15.npz
+│   │       ├── lobe2_16.npz
+│   │       ├── lobe2_17.npz
+│   │       ├── lobe2_18.npz
+│   │       ├── lobe2_19.npz
+│   │       ├── lobe2_20.npz
+│   │       ├── lobe2_21.npz
+│   │       ├── lobe2_22.npz
+│   │       ├── lobe2_23.npz
+│   │       ├── lobe2_24.npz
+│   │       ├── lobe2_25.npz
+│   │       ├── lobe2_26.npz
+│   │       ├── lobe2_27.npz
+│   │       ├── lobe2_28.npz
+│   │       ├── lobe2_29.npz
+│   │       ├── lobe2_3.npz
+│   │       ├── lobe2_30.npz
+│   │       ├── lobe2_31.npz
+│   │       ├── lobe2_33.npz
+│   │       ├── lobe2_34.npz
+│   │       ├── lobe2_35.npz
+│   │       ├── lobe2_36.npz
+│   │       ├── lobe2_37.npz
+│   │       ├── lobe2_38.npz
+│   │       ├── lobe2_41.npz
+│   │       ├── lobe2_5.npz
+│   │       ├── lobe2_6.npz
+│   │       ├── lobe2_7.npz
+│   │       ├── lobe7_0.npz
+│   │       ├── lobe7_18.npz
+│   │       ├── lobe7_20.npz
+│   │       ├── lobe7_21.npz
+│   │       ├── lobe7_22.npz
+│   │       ├── lobe7_23.npz
+│   │       ├── lobe7_24.npz
+│   │       ├── lobe7_25.npz
+│   │       ├── lobe7_26.npz
+│   │       ├── lobe7_27.npz
+│   │       ├── lobe7_28.npz
+│   │       ├── lobe7_29.npz
+│   │       ├── lobe7_30.npz
+│   │       ├── lobe7_31.npz
+│   │       ├── lobe7_32.npz
+│   │       ├── lobe7_33.npz
+│   │       ├── lobe7_34.npz
+│   │       ├── lobe7_4.npz
+│   │       ├── lobe7_5.npz
+│   │       ├── lobe7_7.npz
+│   │       ├── lobe7_8.npz
+│   │       ├── lobe8_0.npz
+│   │       ├── lobe8_1.npz
+│   │       ├── lobe8_15.npz
+│   │       ├── lobe8_16.npz
+│   │       ├── lobe8_17.npz
+│   │       ├── lobe8_18.npz
+│   │       ├── lobe8_19.npz
+│   │       ├── lobe8_20.npz
+│   │       ├── lobe8_21.npz
+│   │       ├── lobe8_22.npz
+│   │       ├── lobe8_23.npz
+│   │       ├── lobe8_24.npz
+│   │       ├── lobe8_3.npz
+│   │       ├── lobe8_4.npz
+│   │       ├── lobe8_5.npz
+│   │       ├── lobe8_6.npz
+│   │       ├── lobe8_7.npz
+│   │       └── lobe8_8.npz
+│   └── wt
+│       ├── lobe1_0.npz
+│       ├── lobe1_2.npz
+│       ├── lobe1_3.npz
+│       ├── lobe1_4.npz
+│       ├── lobe1_5.npz
+│       ├── lobe1_6.npz
+│       ├── lobe1_7.npz
+│       ├── lobe1_9.npz
+│       ├── lobe13_0.npz
+│       ├── lobe13_10.npz
+│       ├── lobe13_11.npz
+│       ├── lobe13_13.npz
+│       ├── lobe13_18.npz
+│       ├── lobe13_2.npz
+│       ├── lobe13_3.npz
+│       ├── lobe13_4.npz
+│       ├── lobe13_5.npz
+│       ├── lobe13_6.npz
+│       ├── lobe13_7.npz
+│       ├── lobe13_8.npz
+│       ├── lobe13_9.npz
+│       ├── lobe15_1.npz
+│       ├── lobe15_3.npz
+│       ├── lobe15_5.npz
+│       ├── lobe15_7.npz
+│       ├── lobe15_8.npz
+│       ├── lobe2_0.npz
+│       ├── lobe2_10.npz
+│       ├── lobe2_12.npz
+│       ├── lobe2_13.npz
+│       ├── lobe2_2.npz
+│       ├── lobe2_32.npz
+│       ├── lobe2_39.npz
+│       ├── lobe2_4.npz
+│       ├── lobe2_40.npz
+│       ├── lobe2_8.npz
+│       ├── lobe2_9.npz
+│       ├── lobe7_1.npz
+│       ├── lobe7_10.npz
+│       ├── lobe7_11.npz
+│       ├── lobe7_12.npz
+│       ├── lobe7_13.npz
+│       ├── lobe7_14.npz
+│       ├── lobe7_15.npz
+│       ├── lobe7_16.npz
+│       ├── lobe7_17.npz
+│       ├── lobe7_19.npz
+│       ├── lobe7_2.npz
+│       ├── lobe7_3.npz
+│       ├── lobe7_6.npz
+│       ├── lobe7_9.npz
+│       ├── lobe8_10.npz
+│       ├── lobe8_11.npz
+│       ├── lobe8_12.npz
+│       ├── lobe8_13.npz
+│       ├── lobe8_14.npz
+│       ├── lobe8_2.npz
+│       ├── lobe8_25.npz
+│       ├── lobe8_26.npz
+│       └── lobe8_9.npz
+├── metrics.csv
+└── rejected_lineage_index.csv
+
+========================================
+FILES IN data/sim/processed_div26/
+========================================
+data/sim/processed_div26
+├── figures
+│   ├── analysis
+│   │   ├── composition_avg_dpn_area_vox_by_divmean.png
+│   │   ├── composition_dpn_area_vox_by_divmean.png
+│   │   ├── composition_lin_area_vox_by_divmean.png
+│   │   ├── composition_n_dpn_by_divmean.png
+│   │   ├── composition_n_pros_by_divmean.png
+│   │   ├── het_adhesion_by_divmean_mudmut.png
+│   │   ├── het_adhesion_by_regdyn_mudmut.png
+│   │   ├── het_adhesion_by_regdyn_wt.png
+│   │   ├── het_adhesion_gutcheck.png
+│   │   ├── het_contact_by_condition.png
+│   │   ├── het_contact_by_regdyn.png
+│   │   ├── het_contact_gutcheck.png
+│   │   ├── nb_cohesion_constrained_D0S26_R0S30.png
+│   │   ├── nb_exposure_by_divmean_mudmut.png
+│   │   ├── rotmean_sweep_divmean0_all_metrics.png
+│   │   ├── sec1_wt_filter_avg_dpn_area_vox.png
+│   │   ├── sec1_wt_filter_dpn_area_vox.png
+│   │   ├── sec1_wt_filter_lin_area_vox.png
+│   │   ├── sec1_wt_filter_n_dpn.png
+│   │   ├── sec1_wt_filter_n_pros.png
+│   │   ├── sec1_wt_gmc_count.png
+│   │   ├── sec1_wt_gutcheck.png
+│   │   ├── sec1b_roundness_boxplot.png
+│   │   ├── sec1b_roundness_gutcheck.png
+│   │   ├── sec1b_roundness_quantile_examples.png
+│   │   ├── sec23_avg_dpn_area_vox.png
+│   │   ├── sec23_dpn_area_vox.png
+│   │   ├── sec23_lin_area_vox.png
+│   │   ├── sec23_n_dpn.png
+│   │   ├── sec23_n_pros.png
+│   │   └── single_cond_regulatory.png
+│   └── yoffset_comparison
+│       ├── composition_avg_dpn_area_vox_by_yoffset.png
+│       ├── composition_dpn_area_vox_by_yoffset.png
+│       ├── composition_lin_area_vox_by_yoffset.png
+│       ├── composition_n_dpn_by_yoffset.png
+│       ├── composition_n_pros_by_yoffset.png
+│       ├── het_by_yoffset.png
+│       ├── lineages_D0S26_sim63.png
+│       ├── lineages_D45S26_sim63.png
+│       ├── lineages_D90S26_sim63.png
+│       └── nb_exposure_by_yoffset.png
+├── het_contact_metrics.csv
+├── het_yoffset_metrics.csv
+├── mudmut_divMean0Stdev26_rotMean0Stdev0_noadhesion.npz
+├── mudmut_divMean0Stdev26_rotMean0Stdev0.npz
+├── mudmut_divMean0Stdev26_rotMean0Stdev30_noadhesion.npz
+├── mudmut_divMean0Stdev26_rotMean0Stdev30.npz
+├── mudmut_divMean0Stdev26_rotMean11Stdev30_noadhesion.npz
+├── mudmut_divMean0Stdev26_rotMean11Stdev30.npz
+├── mudmut_divMean0Stdev26_rotMean45Stdev30_noadhesion.npz
+├── mudmut_divMean0Stdev26_rotMean45Stdev30.npz
+├── mudmut_divMean0Stdev26_rotMean90Stdev30_noadhesion.npz
+├── mudmut_divMean0Stdev26_rotMean90Stdev30.npz
+├── mudmut_divMean11Stdev26_rotMean0Stdev0_noadhesion.npz
+├── mudmut_divMean11Stdev26_rotMean0Stdev0.npz
+├── mudmut_divMean11Stdev26_rotMean0Stdev30_noadhesion.npz
+├── mudmut_divMean11Stdev26_rotMean0Stdev30.npz
+├── mudmut_divMean11Stdev26_rotMean11Stdev30_noadhesion.npz
+├── mudmut_divMean11Stdev26_rotMean11Stdev30.npz
+├── mudmut_divMean45Stdev26_rotMean0Stdev30_noadhesion.npz
+├── mudmut_divMean45Stdev26_rotMean0Stdev30.npz
+├── mudmut_divMean45Stdev26_rotMean45Stdev30_noadhesion.npz
+├── mudmut_divMean45Stdev26_rotMean45Stdev30.npz
+├── mudmut_divMean90Stdev26_rotMean0Stdev30_noadhesion.npz
+├── mudmut_divMean90Stdev26_rotMean0Stdev30.npz
+├── mudmut_divMean90Stdev26_rotMean45Stdev30_noadhesion.npz
+├── mudmut_divMean90Stdev26_rotMean45Stdev30.npz
+├── nb_cohesion_D0S26_R0S30.csv
+├── nb_exposure_metrics.csv
+├── nb_exposure_yoffset_metrics.csv
+├── sim_index.csv
+├── sim_metrics_last.csv
+├── sim_run_index.csv
+├── sim_summary_last.csv
+├── sim_timepoint_metrics.csv
+├── wt_divMean0Stdev26_yoffset50.npz
+├── wt_divMean0Stdev26.npz
+├── wt_divMean11Stdev26.npz
+├── wt_divMean45Stdev26_yoffset50.npz
+├── wt_divMean45Stdev26.npz
+├── wt_divMean90Stdev26_yoffset50.npz
+└── wt_divMean90Stdev26.npz
+
+========================================
+FILES IN data/sim/processed_decoupling/
+========================================
+data/sim/processed_decoupling
+├── sim_index.csv
+├── sim_metrics_last.csv
+├── sim_run_index.csv
+├── sim_summary_last.csv
+├── sim_timepoint_metrics.csv
+├── wt_divMean0Stdev26_relrot.npz
+├── wt_divMean0Stdev26_yoffset50.npz
+├── wt_divMean0Stdev26_yoffset62.npz
+├── wt_divMean0Stdev26_yoffset75.npz
+├── wt_divMean0Stdev26.npz
+├── wt_divMean0Stdev35.npz
+├── wt_divMean0Stdev45.npz
+├── wt_divMean0Stdev60.npz
+├── wt_divMean0Stdev75.npz
+├── wt_divMean0Stdev90.npz
+├── wt_divMean45Stdev26_relrot.npz
+└── wt_divMean90Stdev26_relrot.npz
+
+========================================
+FILES IN data/sim/processed_adhesion/
+========================================
+data/sim/processed_adhesion
+├── figures
+│   └── analysis
+│       ├── composition_avg_dpn_area_vox_by_divmean.png
+│       ├── composition_dpn_area_vox_by_divmean.png
+│       ├── composition_lin_area_vox_by_divmean.png
+│       ├── composition_n_dpn_by_divmean.png
+│       ├── composition_n_pros_by_divmean.png
+│       ├── het_adhesion_by_divmean_mudmut.png
+│       ├── het_adhesion_by_regdyn_mudmut.png
+│       ├── het_adhesion_by_regdyn_wt.png
+│       ├── het_adhesion_gutcheck.png
+│       └── nb_exposure_by_divmean_mudmut.png
+├── het_contact_metrics.csv
+└── nb_exposure_metrics.csv
+
+========================================
+FILE COUNTS BY RAW SIM DIRECTORY
+========================================
+--- data/sim/bioparams_div26_sweep/ ---
+  mudmut_divMean0Stdev26_rotMean0Stdev0_noadhesion/sim41/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0_noadhesion/sim42/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0_noadhesion/sim43/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0_noadhesion/sim44/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0_noadhesion/sim45/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0_noadhesion/sim51/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0_noadhesion/sim52/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0_noadhesion/sim53/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0_noadhesion/sim54/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0_noadhesion/sim55/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0/sim41/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0/sim42/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0/sim43/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0/sim44/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0/sim45/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0/sim51/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0/sim52/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0/sim53/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0/sim54/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev0/sim55/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30_noadhesion/sim41/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30_noadhesion/sim42/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30_noadhesion/sim43/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30_noadhesion/sim44/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30_noadhesion/sim45/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30_noadhesion/sim51/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30_noadhesion/sim52/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30_noadhesion/sim53/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30_noadhesion/sim54/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30_noadhesion/sim55/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30/sim41/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30/sim42/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30/sim43/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30/sim44/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30/sim45/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30/sim51/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30/sim52/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30/sim53/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30/sim54/  (202 files)
+  mudmut_divMean0Stdev26_rotMean0Stdev30/sim55/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30_noadhesion/sim41/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30_noadhesion/sim42/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30_noadhesion/sim43/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30_noadhesion/sim44/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30_noadhesion/sim45/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30_noadhesion/sim51/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30_noadhesion/sim52/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30_noadhesion/sim53/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30_noadhesion/sim54/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30_noadhesion/sim55/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30/sim41/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30/sim42/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30/sim43/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30/sim44/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30/sim45/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30/sim51/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30/sim52/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30/sim53/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30/sim54/  (202 files)
+  mudmut_divMean0Stdev26_rotMean11Stdev30/sim55/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30_noadhesion/sim41/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30_noadhesion/sim42/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30_noadhesion/sim43/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30_noadhesion/sim44/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30_noadhesion/sim45/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30_noadhesion/sim51/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30_noadhesion/sim52/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30_noadhesion/sim53/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30_noadhesion/sim54/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30_noadhesion/sim55/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30/sim41/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30/sim42/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30/sim43/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30/sim44/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30/sim45/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30/sim51/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30/sim52/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30/sim53/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30/sim54/  (202 files)
+  mudmut_divMean0Stdev26_rotMean45Stdev30/sim55/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30_noadhesion/sim41/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30_noadhesion/sim42/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30_noadhesion/sim43/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30_noadhesion/sim44/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30_noadhesion/sim45/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30_noadhesion/sim51/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30_noadhesion/sim52/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30_noadhesion/sim53/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30_noadhesion/sim54/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30_noadhesion/sim55/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30/sim41/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30/sim42/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30/sim43/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30/sim44/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30/sim45/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30/sim51/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30/sim52/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30/sim53/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30/sim54/  (202 files)
+  mudmut_divMean0Stdev26_rotMean90Stdev30/sim55/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0_noadhesion/sim41/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0_noadhesion/sim42/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0_noadhesion/sim43/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0_noadhesion/sim44/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0_noadhesion/sim45/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0_noadhesion/sim51/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0_noadhesion/sim52/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0_noadhesion/sim53/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0_noadhesion/sim54/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0_noadhesion/sim55/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0/sim41/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0/sim42/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0/sim43/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0/sim44/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0/sim45/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0/sim51/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0/sim52/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0/sim53/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0/sim54/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev0/sim55/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30_noadhesion/sim41/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30_noadhesion/sim42/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30_noadhesion/sim43/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30_noadhesion/sim44/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30_noadhesion/sim45/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30_noadhesion/sim51/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30_noadhesion/sim52/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30_noadhesion/sim53/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30_noadhesion/sim54/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30_noadhesion/sim55/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30/sim41/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30/sim42/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30/sim43/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30/sim44/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30/sim45/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30/sim51/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30/sim52/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30/sim53/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30/sim54/  (202 files)
+  mudmut_divMean11Stdev26_rotMean0Stdev30/sim55/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30_noadhesion/sim41/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30_noadhesion/sim42/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30_noadhesion/sim43/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30_noadhesion/sim44/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30_noadhesion/sim45/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30_noadhesion/sim51/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30_noadhesion/sim52/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30_noadhesion/sim53/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30_noadhesion/sim54/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30_noadhesion/sim55/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30/sim41/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30/sim42/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30/sim43/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30/sim44/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30/sim45/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30/sim51/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30/sim52/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30/sim53/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30/sim54/  (202 files)
+  mudmut_divMean11Stdev26_rotMean11Stdev30/sim55/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30_noadhesion/sim41/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30_noadhesion/sim42/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30_noadhesion/sim43/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30_noadhesion/sim44/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30_noadhesion/sim45/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30_noadhesion/sim51/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30_noadhesion/sim52/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30_noadhesion/sim53/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30_noadhesion/sim54/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30_noadhesion/sim55/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30/sim41/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30/sim42/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30/sim43/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30/sim44/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30/sim45/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30/sim51/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30/sim52/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30/sim53/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30/sim54/  (202 files)
+  mudmut_divMean45Stdev26_rotMean0Stdev30/sim55/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30_noadhesion/sim41/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30_noadhesion/sim42/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30_noadhesion/sim43/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30_noadhesion/sim44/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30_noadhesion/sim45/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30_noadhesion/sim51/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30_noadhesion/sim52/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30_noadhesion/sim53/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30_noadhesion/sim54/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30_noadhesion/sim55/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30/sim41/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30/sim42/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30/sim43/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30/sim44/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30/sim45/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30/sim51/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30/sim52/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30/sim53/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30/sim54/  (202 files)
+  mudmut_divMean45Stdev26_rotMean45Stdev30/sim55/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30_noadhesion/sim41/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30_noadhesion/sim42/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30_noadhesion/sim43/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30_noadhesion/sim44/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30_noadhesion/sim45/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30_noadhesion/sim51/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30_noadhesion/sim52/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30_noadhesion/sim53/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30_noadhesion/sim54/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30_noadhesion/sim55/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30/sim41/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30/sim42/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30/sim43/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30/sim44/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30/sim45/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30/sim51/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30/sim52/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30/sim53/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30/sim54/  (202 files)
+  mudmut_divMean90Stdev26_rotMean0Stdev30/sim55/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30_noadhesion/sim41/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30_noadhesion/sim42/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30_noadhesion/sim43/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30_noadhesion/sim44/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30_noadhesion/sim45/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30_noadhesion/sim51/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30_noadhesion/sim52/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30_noadhesion/sim53/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30_noadhesion/sim54/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30_noadhesion/sim55/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30/sim41/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30/sim42/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30/sim43/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30/sim44/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30/sim45/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30/sim51/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30/sim52/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30/sim53/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30/sim54/  (202 files)
+  mudmut_divMean90Stdev26_rotMean45Stdev30/sim55/  (202 files)
+  wt_divMean0Stdev26_yoffset50/sim61/  (202 files)
+  wt_divMean0Stdev26_yoffset50/sim62/  (202 files)
+  wt_divMean0Stdev26_yoffset50/sim63/  (202 files)
+  wt_divMean0Stdev26_yoffset50/sim64/  (202 files)
+  wt_divMean0Stdev26_yoffset50/sim65/  (202 files)
+  wt_divMean0Stdev26_yoffset50/sim71/  (202 files)
+  wt_divMean0Stdev26_yoffset50/sim72/  (202 files)
+  wt_divMean0Stdev26_yoffset50/sim73/  (202 files)
+  wt_divMean0Stdev26_yoffset50/sim74/  (202 files)
+  wt_divMean0Stdev26_yoffset50/sim75/  (202 files)
+  wt_divMean0Stdev26/sim61/  (202 files)
+  wt_divMean0Stdev26/sim62/  (202 files)
+  wt_divMean0Stdev26/sim63/  (202 files)
+  wt_divMean0Stdev26/sim64/  (202 files)
+  wt_divMean0Stdev26/sim65/  (202 files)
+  wt_divMean0Stdev26/sim71/  (202 files)
+  wt_divMean0Stdev26/sim72/  (202 files)
+  wt_divMean0Stdev26/sim73/  (202 files)
+  wt_divMean0Stdev26/sim74/  (202 files)
+  wt_divMean0Stdev26/sim75/  (202 files)
+  wt_divMean11Stdev26/sim61/  (202 files)
+  wt_divMean11Stdev26/sim62/  (202 files)
+  wt_divMean11Stdev26/sim63/  (202 files)
+  wt_divMean11Stdev26/sim64/  (202 files)
+  wt_divMean11Stdev26/sim65/  (202 files)
+  wt_divMean11Stdev26/sim71/  (202 files)
+  wt_divMean11Stdev26/sim72/  (202 files)
+  wt_divMean11Stdev26/sim73/  (202 files)
+  wt_divMean11Stdev26/sim74/  (202 files)
+  wt_divMean11Stdev26/sim75/  (202 files)
+  wt_divMean45Stdev26_yoffset50/sim61/  (202 files)
+  wt_divMean45Stdev26_yoffset50/sim62/  (202 files)
+  wt_divMean45Stdev26_yoffset50/sim63/  (202 files)
+  wt_divMean45Stdev26_yoffset50/sim64/  (202 files)
+  wt_divMean45Stdev26_yoffset50/sim65/  (202 files)
+  wt_divMean45Stdev26_yoffset50/sim71/  (202 files)
+  wt_divMean45Stdev26_yoffset50/sim72/  (202 files)
+  wt_divMean45Stdev26_yoffset50/sim73/  (202 files)
+  wt_divMean45Stdev26_yoffset50/sim74/  (202 files)
+  wt_divMean45Stdev26_yoffset50/sim75/  (202 files)
+  wt_divMean45Stdev26/sim61/  (202 files)
+  wt_divMean45Stdev26/sim62/  (202 files)
+  wt_divMean45Stdev26/sim63/  (202 files)
+  wt_divMean45Stdev26/sim64/  (202 files)
+  wt_divMean45Stdev26/sim65/  (202 files)
+  wt_divMean45Stdev26/sim71/  (202 files)
+  wt_divMean45Stdev26/sim72/  (202 files)
+  wt_divMean45Stdev26/sim73/  (202 files)
+  wt_divMean45Stdev26/sim74/  (202 files)
+  wt_divMean45Stdev26/sim75/  (202 files)
+  wt_divMean90Stdev26_yoffset50/sim61/  (202 files)
+  wt_divMean90Stdev26_yoffset50/sim62/  (202 files)
+  wt_divMean90Stdev26_yoffset50/sim63/  (202 files)
+  wt_divMean90Stdev26_yoffset50/sim64/  (202 files)
+  wt_divMean90Stdev26_yoffset50/sim65/  (202 files)
+  wt_divMean90Stdev26_yoffset50/sim71/  (202 files)
+  wt_divMean90Stdev26_yoffset50/sim72/  (202 files)
+  wt_divMean90Stdev26_yoffset50/sim73/  (202 files)
+  wt_divMean90Stdev26_yoffset50/sim74/  (202 files)
+  wt_divMean90Stdev26_yoffset50/sim75/  (202 files)
+  wt_divMean90Stdev26/sim61/  (202 files)
+  wt_divMean90Stdev26/sim62/  (202 files)
+  wt_divMean90Stdev26/sim63/  (202 files)
+  wt_divMean90Stdev26/sim64/  (202 files)
+  wt_divMean90Stdev26/sim65/  (202 files)
+  wt_divMean90Stdev26/sim71/  (202 files)
+  wt_divMean90Stdev26/sim72/  (202 files)
+  wt_divMean90Stdev26/sim73/  (202 files)
+  wt_divMean90Stdev26/sim74/  (202 files)
+  wt_divMean90Stdev26/sim75/  (202 files)
+
+--- data/sim/wt_plane_rotation_decoupling/ ---
+  wt_divMean0Stdev26_relrot/sim61/  (202 files)
+  wt_divMean0Stdev26_relrot/sim71/  (202 files)
+  wt_divMean0Stdev26_yoffset50/sim61/  (202 files)
+  wt_divMean0Stdev26_yoffset50/sim71/  (202 files)
+  wt_divMean0Stdev26_yoffset62/sim61/  (202 files)
+  wt_divMean0Stdev26_yoffset62/sim71/  (202 files)
+  wt_divMean0Stdev26_yoffset75/sim61/  (202 files)
+  wt_divMean0Stdev26_yoffset75/sim71/  (202 files)
+  wt_divMean0Stdev26/sim61/  (202 files)
+  wt_divMean0Stdev26/sim71/  (202 files)
+  wt_divMean0Stdev35/sim61/  (202 files)
+  wt_divMean0Stdev35/sim71/  (202 files)
+  wt_divMean0Stdev45/sim61/  (202 files)
+  wt_divMean0Stdev45/sim71/  (202 files)
+  wt_divMean0Stdev60/sim61/  (202 files)
+  wt_divMean0Stdev60/sim71/  (202 files)
+  wt_divMean0Stdev75/sim61/  (202 files)
+  wt_divMean0Stdev75/sim71/  (202 files)
+  wt_divMean0Stdev90/sim61/  (202 files)
+  wt_divMean0Stdev90/sim71/  (202 files)
+  wt_divMean45Stdev26_relrot/sim61/  (202 files)
+  wt_divMean45Stdev26_relrot/sim71/  (202 files)
+  wt_divMean90Stdev26_relrot/sim61/  (202 files)
+  wt_divMean90Stdev26_relrot/sim71/  (202 files)
+
+--- data/sim/archive/ ---
+  bioparams_div26_sweep/  (16161 files total)
+  processed_div26/  (22 files total)
+  processed/  (13 files total)
+
+========================================
+FILE COUNTS BY EXP RAW DIRECTORY
+========================================
+--- data/exp/wrl_files/ ---
+  Control/  (18 files)
+  Mud/  (12 files)
+  Nanobody/  (18 files)
+
+--- data/exp/rotation_csvs/ ---
+  data/exp/rotation_csvs/Division axes_wt_mud (1)(mud).csv
+  data/exp/rotation_csvs/Division axes_wt_mud (1)(wild type).csv
