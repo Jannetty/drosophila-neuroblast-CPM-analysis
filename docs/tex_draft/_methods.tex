@@ -1,0 +1,316 @@
+\section{Methods}
+
+\subsection{Experimental lineage dataset and preprocessing}
+
+Experimental lineage measurements were derived from three-dimensional microscopy segmentations of \textit{Drosophila} larval brain lobes.
+For each lobe, three VRML (\texttt{.wrl}) files were available: lineage hull segmentations, Dpn-positive nuclei, and Pros-positive nuclei.
+The analyzed dataset included WT control lobes (\texttt{lobe1}, \texttt{lobe2}, \texttt{lobe7}, \texttt{lobe8}, \texttt{lobe13}, and \texttt{lobe15}), \textit{mud} mutant lobes (\texttt{lobe110}, \texttt{lobe113}, \texttt{lobe116}, and \texttt{lobe119}), and nanobody perturbation lobes (\texttt{lobe16}, \texttt{lobe17}, \texttt{lobe19}, \texttt{lobe20}, \texttt{lobe21}, and \texttt{lobe22}).
+
+Experimental preprocessing uses the local pipeline implemented in LINK TO REPO WITH \texttt{scripts/preprocess\_exp.py} and \texttt{src/npa/exp\_preprocessing/}.
+WRL files are parsed into triangle meshes by extracting vertex and face blocks from the VRML text and fan-triangulating polygonal faces.
+Pros-positive cells are assigned to lineage hulls by bounding-box overlap, with assignment requiring at least $95\%$ of vertices to fall within a lineage bounding box.
+Dpn-positive cells are assigned by sampled mesh containment, using a bounding-box prefilter followed by containment testing of 20 sampled vertices and requiring at least $60\%$ of sampled vertices to lie within a lineage hull.
+
+Lineages are excluded before analysis if they fail either of two quality-control criteria.
+First, lineages are rejected as disconnected if they contain a secondary connected component with at least 50 faces and volume at least 5.0 in the native WRL coordinate system.
+Second, lineages are rejected if no Dpn-positive cell can be assigned to the lineage.
+Rejected lineages are preserved in a separate index but are excluded from all summary analyses.
+Among WT lineages, 60 of 143 total segmented lineages were retained after filtering (2 lineages were rejected as disconnected and 81 rejected for lacking an assigned Dpn-positive cell).
+Among \textit{mud} mutant lineages, 59 of 63 total segmented lineages were retained after filtering, and the retained lineages included between 1 and 5 Dpn-positive cells.
+
+For each retained lineage, the lineage hull vertices are projected into two dimensions using the first two principal components of the three-dimensional hull geometry.
+The projected lineage outline is represented by the convex hull of the projected vertices, buffered by $0.5 \times ds$ with \(ds = 0.3~\mu\mathrm{m}\).
+To generate analysis tensors aligned with the simulation outputs, each projected lineage is rasterized onto a \(200 \times 200\) canvas.
+Pixels inside the lineage hull are assigned to the nearest Dpn or Pros centroid using a Voronoi tessellation, yielding a two-channel tensor in which channel 0 represents Dpn territory and channel 1 represents Pros territory.
+Per-lineage mesh files and stacked genotype-level analysis tensors are written to \texttt{data/exp/processed/}.
+
+Experimental endpoint summaries are then computed from the processed lineage dataset.
+For each lineage we recorded the number of Dpn-positive cells (\texttt{n\_dpn}), the number of Pros-positive cells (\texttt{n\_pros}), lineage area in occupied pixels (\texttt{lin\_area\_vox}), total Dpn area (\texttt{dpn\_area\_vox}), and mean Dpn area per lineage (\texttt{avg\_dpn\_area\_vox}).
+Genotype-level means and standard deviations are written to \texttt{data/exp/processed/exp\_summary.csv} and used as the experimental reference for model calibration and comparison.
+
+\subsection{Cellular Potts model of WT and \textit{mud} mutant lineages}
+
+All code for this model is publicly available at this url: ARCADE-URL.
+All code for the analysis run in this manuscript is available at this url: REPO-URL.
+
+We model neuroblast lineage development with a two-dimensional spatiotemporal Cellular Potts model implemented in the ABM framework ARCADE.
+Although the simulations are visualized and analyzed in two dimensions, ARCADE uses a three-dimensional volume formalism, so growth and division thresholds are specified in \(\mu\mathrm{m}^3\) and represented on a lattice of height one voxel.
+Unless otherwise noted, simulations run for 2161 ticks with \(dt = 0.01667\) h per tick, corresponding to 36 h of total biological time with 1 minute per tick.
+The default lattice size is \(200 \times 200 \times 1\) voxels, with \(ds = 0.3~\mu\mathrm{m}\) per voxel edge.
+
+\subsection{Cellular Potts Hamiltonian}
+
+In a Cellular Potts model, each lattice site \(i\) is assigned a cell identity \(\sigma_i\), and each identity belongs to a cell type \(\tau(\sigma_i)\).
+Cell morphology and movement emerge from stochastic updates that consider whether a given lattice site should take its neighbor's identity.
+Whether a proposed copy is accepted depends on the resulting change in the Hamiltonian energy.
+
+The full Hamiltonian can be written generically as
+\[
+H = H_{\mathrm{adhesion}} + H_{\mathrm{volume}} + H_{\mathrm{surface}}.
+\]
+The adhesion term is
+\[
+H_{\mathrm{adhesion}} = \sum_{\langle i,j \rangle} J\!\left(\tau(\sigma_i),\tau(\sigma_j)\right)\left(1-\delta_{\sigma_i,\sigma_j}\right),
+\]
+where \(\langle i,j \rangle\) indexes neighboring lattice sites, \(\sigma\) is the occupying cell identity or extracellular medium, \(\tau\) is the corresponding cell type, \(J\) is the contact-energy coefficient, and \(\delta_{\sigma_i,\sigma_j}\) is the Kronecker delta.
+This term contributes only at interfaces between distinct cells or between a cell and extracellular space.
+
+The volume constraint term is
+\[
+H_{\mathrm{volume}} = \sum_{\sigma} \lambda_v \left(v(\sigma)-V(\sigma)\right)^2,
+\]
+where \(v(\sigma)\) is the current cell volume, \(V(\sigma)\) is the target cell volume, and \(\lambda_v\) sets the strength of the volume penalty.
+The surface constraint term is
+\[
+H_{\mathrm{surface}} = \sum_{\sigma} \lambda_s \left(s(\sigma)-S(\sigma)\right)^2,
+\]
+where \(s(\sigma)\) is the current cell perimeter, \(S(\sigma)\) is the target perimeter, and \(\lambda_s\) sets the strength of the surface penalty.
+
+Proposed lattice updates are accepted according to the standard Metropolis rule
+\[
+P(\mathrm{accept}) =
+\begin{cases}
+1, & \Delta H < 0, \\
+e^{-\Delta H/T}, & \Delta H \geq 0,
+\end{cases}
+\]
+where \(\Delta H\) is the change in Hamiltonian associated with the proposed copy event and \(T\) is the simulation temperature.
+
+In the simulations analyzed here, the contact-energy coefficient for cell--extracellular-space interfaces is 80, whereas the default cell--cell coefficient is 50.
+Because lower contact-energy values correspond to stronger effective adhesion in this formalism, this choice ensured cohesion within each lineage, and prevented cells from dispersing into extracellular space.
+For mutant simulations that included preferential NB adhesion, the NB--NB contact-energy coefficient was reduced further to 40.
+Surface lambda values are 0.5 for neuroblasts, 1 for GMCs, and 2 for neurons.
+Because the contribution of the surface term increases with cell size, these values are chosen so that cells of different types nevertheless maintain comparably smooth and rounded morphologies.
+The Boltzmann temperature is visually calibrated to 18 so that WT neuroblasts can relax toward rounder shapes between successive asymmetric divisions.
+Apoptosis is not included.
+
+\subsection{WT growth and division rules}
+
+In the WT rule set, the neuroblast grows until it reaches a division threshold equal to $1.166\times$ its initial volume and then divides asymmetrically.
+The default WT division plane is perpendicular to the apical axis and passes through a point located \(88\%\) of the cell length from the apical edge and \(50\%\) across the lateral axis.
+Default angular variation around the default division plane is drawn from a normal distribution centered at \(0^\circ\) with standard deviation \(26^\circ\).
+This was based on the evaluation of experimental data that tracked the angle of cell divisions of WT NBs after each successive division (supplemental figure).
+After WT division, the larger apical daughter remains a neuroblast and the smaller basal daughter becomes a GMC.
+The GMC divides once more symmetrically to produce two neurons, and neurons neither grow nor divide.
+
+\subsection{\textit{mud} mutant growth and division rules}
+To model \textit{mud} mutant lineages, we impose a threshold at \(\pm 45^\circ\) such that any sampled rotation of the division plane exceeding \(45^\circ\) in magnitude is converted into a deterministic symmetric division along the neuroblast apical axis.
+In the mutant rule set used here, this yields approximately 13\% symmetric divisions, consistent with experimental observation.
+Mutant daughter neuroblasts inherit apical axes rotated relative to the parent axis by an amount drawn from a normal distribution with mean \(0^\circ\) and standard deviation \(30^\circ\).
+This inheritance rule is chosen to approximate the qualitative loss of stable spindle orientation observed experimentally in \textit{mud} mutant lineages.
+
+\subsubsection{Imposed and volume-sensitive division thresholds}
+The division threshold for \textit{mud} mutants is implemented in two different ways.
+Under the fixed-threshold ruleset (\texttt{VCV=0}), all neuroblasts of a given type share the same critical volume \(V_c\), and division occurs when the cell reaches
+\[
+V \geq \mathrm{SIZE\_TARGET}\times V_c.
+\]
+In practice, this means \textit{mud} mutant cells divide when they surpass the same absolute threshold, which is set to \(1.166\times\) the expected WT neuroblast initial volume.
+
+Under the birth-volume-dependent ruleset (\texttt{VCV=1}), daughter critical volume is reset from daughter birth volume.
+For daughter neuroblasts, the new critical volume is
+\[
+V_{c,\mathrm{daughter}} = \max\!\left(V_{\mathrm{birth}},\,0.2V_{c,\mathrm{WT}}\right),
+\]
+where \(V_{c,\mathrm{WT}}\) is the baseline WT neuroblast critical volume.
+For GMC daughters, the analogous rule is
+\[
+V_{c,\mathrm{GMC}} = \max\!\left(V_{\mathrm{birth}},\,0.1V_{\mathrm{NB,birth}}\right).
+\]
+Under this ruleset, the division threshold decreases as mutant daughter cells are born progressively smaller after successive symmetric divisions, but it cannot fall below a fixed minimum of \(20\%\) of the WT neuroblast critical volume (or \(10\%\) the initial GMC critical volume for the GMCs).
+Biologically, this corresponds to the assumption that a cell can only divide if it remains above a minimum size.
+Thus, \texttt{VCV=0} tests a fixed-threshold sizer hypothesis, whereas \texttt{VCV=1} allows daughter birth size to propagate into the next division threshold.
+
+\subsubsection{NB growth regulatory mechanisms}
+To test candidate mechanisms constraining mutant lineage growth, we vary whether neuroblast growth rate is regulated by cell volume or by NB--NB contact.
+Each candidate repression mechanism can operate either in a cell-autonomous ABM-like mode or in a population-averaged PDE-like mode.
+
+\paragraph{Volume-regulated growth.}
+When volume-sensitive growth is enabled, the effective growth rate is scaled as a power law of cell volume relative to a reference volume.
+In the ABM-like implementation, each cell updates its own growth rate according to
+\[
+r_i = r_0\left(\frac{V_i}{V_{\mathrm{ref}}}\right)^s,
+\]
+where \(r_0\) is the baseline growth rate, \(V_i\) is the current cell volume, \(V_{\mathrm{ref}}\) is the expected equilibrium volume for that cell type, and \(s\) is the volume-sensitivity exponent.
+In all volume-regulated simulations analyzed here, \(s=3\).
+For neuroblasts, the reference volume is computed from the midpoint of the WT-like asymmetric division cycle,
+\[
+V_{\mathrm{ref,NB}} = \frac{V_{\mathrm{div}}(1+f_{\mathrm{retain}})}{2},
+\]
+where \(V_{\mathrm{div}}=\mathrm{SIZE\_TARGET}\times V_{c,\mathrm{WT}}\) and \(f_{\mathrm{retain}}\) is the fraction of pre-division volume retained by the NB after division.
+For GMCs, the reference volume is
+\[
+V_{\mathrm{ref,GMC}} = \frac{V_c + \mathrm{SIZE\_TARGET}\times V_c}{2}
+= V_c\frac{1+\mathrm{SIZE\_TARGET}}{2}.
+\]
+
+In the PDE-like implementation, all cells of a given type share a common growth rate based on the population-average volume rather than their own individual volume.
+This is implemented by setting \texttt{PDELIKE=1}; the ABM-like implementation uses \texttt{PDELIKE=0}.
+For neuroblasts this becomes
+\[
+r_{\mathrm{NB}} = r_0\left(\frac{\bar V_{\mathrm{NB}}}{V_{\mathrm{ref,NB}}}\right)^s,
+\]
+where \(\bar V_{\mathrm{NB}}\) is the mean neuroblast volume across the simulation.
+For GMCs the analogous update is
+\[
+r_{\mathrm{GMC}} = r_0\left(\frac{\bar V_{\mathrm{GMC}}}{\bar V_{\mathrm{ref,GMC}}}\right)^s,
+\]
+with \(\bar V_{\mathrm{ref,GMC}} = \bar V_c(1+\mathrm{SIZE\_TARGET})/2\).
+Biologically, this PDE-like formulation can be interpreted as a population-wide signal that causes all cells of a given type to respond to the mean state of that population.
+
+\paragraph{NB-contact-regulated growth.}
+When NB self-repression is enabled, growth rate is instead downregulated by a Hill-type function of neuroblast contact.
+In the ABM-like implementation, each neuroblast responds to its own number of unique NB neighbors:
+\[
+r_i = r_0\frac{K^n}{K^n + N_i^n},
+\]
+where \(N_i\) is the number of NB neighbors for cell \(i\), \(K\) is the half-maximal neighbor count, and \(n\) is the Hill exponent.
+In all NB-contact-regulated simulations analyzed here, \(K=2\) neighbors and \(n=3\).
+This gives maximal growth in the absence of neighboring neuroblasts and progressively stronger repression as local NB crowding increases.
+
+In the PDE-like implementation, all neuroblasts share a common growth rate determined by a population-level NB signal.
+As above, this is implemented by setting \texttt{PDELIKE=1}; the ABM-like NB-contact implementation uses \texttt{PDELIKE=0}.
+In the implementation used here, that signal is the number of neuroblasts in the simulation rather than each cell's local neighbor count, yielding
+\[
+r_{\mathrm{NB}} = r_0\frac{K^n}{K^n + N_{\mathrm{pop}}^n},
+\]
+where \(N_{\mathrm{pop}}\) is the population-level NB signal.
+This PDE-like variant therefore acts as a global repression regime in which all neuroblasts slow together as the mutant NB population expands.
+
+\subsection{Model calibration and simulation subsets}
+
+The WT baseline is calibrated against experimental endpoint summaries rather than against spatial organization.
+Calibration targets are lineage area, number of Pros-positive cells, number of Dpn-positive cells, total Dpn area, and mean Dpn area per lineage at the terminal time point.
+These quantities are compared to the averages calculated from the WT experimental data.
+Additional calibration constraints require WT neuroblast cycle times below 90 min and GMC cycle times of at least 8 h, both also experimentally observed metrics.
+
+Offset-perturbed WT simulations require partial recalibration because shifting the division plane toward a more symmetric split changes daughter birth sizes and therefore alters lineage-scale outcomes even when the cell identity rules are unchanged.
+For these offset-perturbed conditions, NB and GMC growth rates are recalibrated to maintain approximately comparable terminal cell counts across conditions, rather than to preserve the WT volume-based metrics or cell-cycle-duration targets.
+This choice is made so that differences in lineage mixing can be interpreted more fairly, because the opportunity for mixing depends in part on how many cells a lineage contains.
+We note that the offset-perturbed simulations also produce larger cells, which in principle could increase the amount of neuroblast coverage and thereby affect interface-based spatial readouts.
+However, in practice neuroblast coverage remains limited in these simulations, so we interpret the observed changes in mixing primarily as consequences of the altered division geometry rather than of expanded neuroblast area alone.
+This was done to try to provide a fair qualitative comparison of mixing between lineages.
+Because cells move as a unit, the amount of mixing a lineage can have is proportional to the number of cells it contains.
+We aknowledge that, because the offset-perturbed simulations had cells of larger volume, this provides the opportunity for more neuroblast coverage.
+However we found that there wasn't that much neuroblast coverage anyways so didn't worry about it.
+
+\subsection{Quantitative measures for simulation--experiment comparison}
+
+All quantitative analyses are performed on terminal snapshots.
+For both experimental and simulated lineages, occupied pixel area is converted to projected area in \(\mu\mathrm{m}^2\) by multiplying by \(ds^2 = 0.09~\mu\mathrm{m}^2\) per pixel whenever areas are reported in physical units.
+
+\subsubsection{Endpoint composition and scale metrics}
+
+The primary non-spatial comparison metrics are:
+\texttt{lin\_area\_vox}, the total occupied lineage area in pixels;
+\texttt{n\_pros}, the number of Pros-positive progeny;
+\texttt{n\_dpn}, the number of Dpn-positive neuroblasts;
+\texttt{dpn\_area\_vox}, the total Dpn area in the lineage; and
+\texttt{avg\_dpn\_area\_vox}, the mean Dpn area per lineage.
+For experimental lineages, Dpn and Pros areas are computed from the Voronoi territories of the processed lineage tensors.
+For simulations, these metrics are computed directly from raw \texttt{CELLS.json} and \texttt{LOCATIONS.json} voxel lists at the last timepoint.
+Simulation outputs are summarized either as per-run endpoint values or as condition-level means and standard deviations, depending on the figure.
+
+\subsubsection{Parameters}
+Core parameters for the calibrated WT baseline, the offset-perturbed WT simulations, and the mutant growth-regulation simulations are summarized in Tables~\ref{tab:core-params}, \ref{tab:offset-params}, and \ref{tab:reg-params}.
+The full parameterization logic, calibration sweeps, and offset-specific recalibration details are documented in \texttt{ARCADE/PARAMETERS\_EXPLAINED.md} and \texttt{ARCADE/PARAMETERS\_y50\_EXPLAINED.md}.
+
+\begin{table}[!htbp]
+\centering
+\caption{Core WT model parameters used in the calibrated baseline simulations.}
+\label{tab:core-params}
+\begin{tabular}{p{4.2cm}p{2.2cm}p{2.0cm}p{6.0cm}}
+\toprule
+Parameter & Value & Units & Role \\
+\midrule
+\texttt{ds} & 0.3 & \(\mu\mathrm{m}\)/voxel & Spatial scale of the lattice \\
+\texttt{dt} & 0.01667 & h/tick & Temporal scale (\(\approx\) 1 min/tick) \\
+\texttt{ticks} & 2161 & ticks & Total simulated duration (\(\approx\) 36 h) \\
+\texttt{length, width, height} & 200, 200, 1 & voxels & Two-dimensional simulation domain \\
+NB \texttt{CRITICAL\_VOLUME} & 17.5 & \(\mu\mathrm{m}^3\) & Resting neuroblast target volume \\
+NB \texttt{SIZE\_TARGET} & 1.166 & fold & Neuroblast divides at \(1.166\times\) resting size \\
+NB \texttt{CELL\_GROWTH\_RATE} & 2.25 & \(\mu\mathrm{m}^3\)/h & Sets WT neuroblast cycle length \\
+GMC \texttt{CELL\_GROWTH\_RATE} & 0.34 & \(\mu\mathrm{m}^3\)/h & Sets GMC cycle length \\
+Neuron \texttt{CELL\_GROWTH\_RATE} & 0 & \(\mu\mathrm{m}^3\)/h & Neurons do not grow \\
+WT division offset & 88 & \% of apical axis length & Asymmetric NB/GMC split position \\
+WT division-angle variation & \(N(0, 26)\) & degrees & Stochastic variation around the default division axis \\
+\texttt{ADHESION} & 80 & a.u. & Generic cell--cell adhesion \\
+\texttt{TEMPERATURE} & 18 & a.u. & Potts acceptance temperature \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[!htbp]
+\centering
+\caption{Parameters changed for the WT offset perturbation relative to the calibrated WT baseline. Parameters not listed were unchanged from Table~\ref{tab:core-params}.}
+\label{tab:offset-params}
+\begin{tabular}{p{4.5cm}p{2.3cm}p{2.3cm}p{5.2cm}}
+\toprule
+Parameter & Baseline WT & Offset-50 WT & Reason for change \\
+\midrule
+WT division offset & 88\% & 50\% & Perturbation under study \\
+NB \texttt{SIZE\_TARGET} & 1.166 & 2.0 & Maintains return to near-resting size after a 50/50 split \\
+NB \texttt{CRITICAL\_VOLUME} & 17.5 \(\mu\mathrm{m}^3\) & 13 \(\mu\mathrm{m}^3\) & Keeps average NB projected area near the WT target \\
+GMC \texttt{CRITICAL\_VOLUME} & 11 \(\mu\mathrm{m}^3\) & 13 \(\mu\mathrm{m}^3\) & Matches larger GMC birth size after symmetric splitting \\
+Neuron \texttt{CRITICAL\_VOLUME} & 11 \(\mu\mathrm{m}^3\) & 13 \(\mu\mathrm{m}^3\) & Matches inherited neuron birth size \\
+GMC \texttt{CELL\_GROWTH\_RATE} & 0.34 \(\mu\mathrm{m}^3\)/h & 1.53 \(\mu\mathrm{m}^3\)/h & Preserves approximate GMC cycle duration after the offset shift \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[!htbp]
+\centering
+\caption{Additional parameters used in mutant growth-regulation simulations.}
+\label{tab:reg-params}
+\begin{tabular}{p{5.0cm}p{2.2cm}p{2.0cm}p{5.0cm}}
+\toprule
+Parameter & Value & Units & Role \\
+\midrule
+\shortstack[l]{\texttt{VOLUME\_BASED\_}\\\texttt{CRITICAL\_VOLUME}} & 0 or 1 & — & Selects imposed (\texttt{VCV=0}) or birth-volume-dependent (\texttt{VCV=1}) division thresholds \\
+\texttt{PDELIKE} & 0 or 1 & — & Selects ABM-like (\texttt{0}) or population-averaged PDE-like (\texttt{1}) regulation \\
+\shortstack[l]{\texttt{DYNAMIC\_GROWTH\_RATE\_}\\\texttt{VOLUME}} & 0 or 1 & — & Enables or disables volume-regulated growth \\
+\shortstack[l]{\texttt{GROWTH\_RATE\_VOLUME\_}\\\texttt{SENSITIVITY}} & 3.0 & — & Exponent \(s\) controlling the strength of volume-dependent growth repression \\
+\shortstack[l]{\texttt{DYNAMIC\_GROWTH\_RATE\_NB\_}\\\texttt{SELF\_REPRESSION}} & 0 or 1 & — & Enables or disables NB-contact-regulated growth \\
+\shortstack[l]{\texttt{NB\_CONTACT\_}\\\texttt{HALF\_MAX}} & 2.0 & neighbors & Half-maximal repression constant \(K\) for NB-contact regulation \\
+\texttt{NB\_CONTACT\_HILL\_N} & 3.0 & — & Hill exponent \(n\) controlling NB-contact repression steepness \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsubsection{Normalised heterotypic contact fraction}
+
+To quantify lineage mixing, we compute a normalised heterotypic contact fraction from each simulated lineage snapshot.
+This choice is motivated by the Cellular Potts formalism itself, in which heterotypic interfaces are directly related to the contact-energy term in the Hamiltonian and mismatched cell contacts are a standard readout of cell sorting behavior (DOI: 10.1103/PhysRevE.47.2128; DOI: 10.1371/journal.pcbi.1008576).
+Pixels are classified as neuroblast (NB), non-NB progeny, or empty.
+All horizontally and vertically adjacent occupied pixel pairs are then enumerated using 4-connectivity.
+A contact is considered heterotypic if one pixel is NB and the other is non-NB, and homotypic otherwise.
+The raw heterotypic contact fraction is defined as
+\[
+\mathrm{het\_frac} = \frac{\mathrm{heterotypic\ contacts}}{\mathrm{heterotypic\ contacts} + \mathrm{homotypic\ contacts}}.
+\]
+
+Because this metric is computed from occupied pixel-pixel contacts, we normalize the raw heterotypic contact fraction by the value expected under random pixel-label mixing across occupied lineage territory, while preserving the observed NB and non-NB area fractions.
+If \(p_{\mathrm{NB}}\) is the fraction of occupied pixels belonging to the neuroblast and \(p_{\mathrm{nonNB}}\) is the fraction belonging to non-neuroblast cells, then the expected heterotypic fraction under this voxel-scale random-mixing null is \(2 p_{\mathrm{NB}} p_{\mathrm{nonNB}}\).
+The normalized metric is therefore
+\[
+\mathrm{norm\_het\_frac} = \frac{\mathrm{het\_frac}}{2 p_{\mathrm{NB}} p_{\mathrm{nonNB}}}.
+\]
+Values less than 1 indicate greater segregation than expected from voxel-scale random label shuffling, values near 1 indicate approximately random interfacial mixing, and values greater than 1 indicate excess intermixing.
+
+\subsubsection{Neuroblast exposure to extracellular space}
+
+To quantify how peripherally the neuroblast is positioned, we measure the fraction of the neuroblast perimeter exposed to extracellular space.
+Using the NB mask from each simulated lineage, we enumerate all horizontal and vertical NB boundary contacts.
+A boundary segment is counted as exposed if it separates NB from empty space and as internal contact if it separates NB from a non-NB cell.
+The neuroblast exposure metric is defined as
+\[
+\mathrm{exposed\_frac} = \frac{\mathrm{NB\mbox{-}empty\ boundary\ contacts}}{\mathrm{NB\mbox{-}empty\ boundary\ contacts} + \mathrm{NB\mbox{-}nonNB\ boundary\ contacts}}.
+\]
+Higher values indicate a more peripheral neuroblast, whereas lower values indicate increasing neuroblast internalization within the lineage.
+
+\subsubsection{Representative lineage selection}
+
+For the representative WT lineages shown in Figure 1, simulated runs and experimental lineages are selected by lineage-area percentile.
+We identify examples closest to the 10th, 50th, and 90th percentiles of the WT lineage-area distributions.
+For the WT geometry perturbation figures, representative simulated runs are chosen from the corresponding condition-specific endpoint distributions, with manual overrides applied only when necessary to avoid a misleading representative example for a given spatial phenotype.

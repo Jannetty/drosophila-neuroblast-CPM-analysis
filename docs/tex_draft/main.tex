@@ -1,0 +1,92 @@
+\documentclass [11pt, oneside] {uwthesis}
+ 
+%
+% The following line would print the thesis in a postscript font 
+
+% \usepackage{natbib}
+% \def\bibpreamble{\protect\addcontentsline{toc}{chapter}{Bibliography}}
+
+\setcounter{tocdepth}{1}  % Print the chapter and sections to the toc
+ 
+
+% ==========   Local defs and mods
+%
+
+% --- sample stuff only -----
+% These format the sample code in this document
+
+\usepackage{alltt}  % 
+\newenvironment{demo}
+  {\begin{alltt}\leftskip3em
+     \def\\{\ttfamily\char`\\}%
+     \def\{{\ttfamily\char`\{}%
+     \def\}{\ttfamily\char`\}}}
+  {\end{alltt}}
+ 
+% metafont font.  If logo not available, use the second form
+%
+% \font\mffont=logosl10 scaled\magstep1
+\let\mffont=\sf
+% --- end-of-sample-stuff ---
+ 
+\usepackage{graphicx}
+\graphicspath{{./figures/}{./2_ch2_review/figures/}}
+\usepackage{subcaption}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{capt-of}
+\newcommand{\insilico}{\textit{in silico }}
+\newcommand{\invitro}{\textit{in vitro }}
+\newcommand{\invivo}{\textit{in vivo }}
+
+\newenvironment{chapterabstract}{
+  \begin{center}
+  \textbf{Abstract}
+  \end{center}
+  \noindent
+}{\vspace{1em}}
+
+\begin{document}
+
+\textpages
+
+\chapter{Division geometry and size-dependent growth regulation shape developing Drosophila neuroblast lineages in a calibrated Cellular Potts Model}
+
+\vspace{-1em}
+
+\begin{center}
+\small
+Sophia K. Jannetty\textsuperscript{1},
+J Ian Hertzler\textsuperscript{1},
+Danielle Vahdat\textsuperscript{1},
+Clemens Cabernard\textsuperscript{1}
+Neda Bagheri\textsuperscript{1,2,$\dagger$},
+
+\vspace{0.75em}
+
+\textsuperscript{1}Department of Biology, University of Washington, Seattle, WA 98105, USA\\
+\textsuperscript{2}Department of Chemical Engineering, University of Washington, Seattle, WA 98105, USA\\
+
+\vspace{0.75em}
+
+\textsuperscript{*}These authors contributed equally to this work.\\
+\textsuperscript{$\dagger$}Correspondence: \texttt{nbagheri@uw.edu}
+
+\vspace{1em}
+\normalsize
+\textbf{Author's note}
+\end{center}
+
+We are currently in the process of preparing this work for submission.
+
+
+\input{_abstract.tex}
+\input{_introduction.tex}
+\input{_results.tex}
+\input{_discussion.tex}
+\input{_conclusion.tex}
+\input{_methods.tex}
+\input{_supplement.tex}
+
+\end{document}

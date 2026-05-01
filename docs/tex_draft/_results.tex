@@ -1,0 +1,199 @@
+\section{Results}
+
+\subsection{Spatial organization of the WT neuroblast lineage emerges from calibrated growth and division dynamics.}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=.75\textwidth]{fig1/fig1.png}
+\caption{\textbf{Calibrated CPM of developing neuroblast lineage recapitulates expected WT lineage scale, composition, and organization.} 
+A. WT and mud Mutant planes of division and differentiation cascades.
+B. Schematic of how the CPM implements asymmetric division and GMC division.
+C. Top: Three example simulated WT neuroblast lineages reflecting the 10th, 50th and 90th percentile of lineage area across all WT simulations. Bottom: The distribution of cells in three experimentally imaged WT lineages. Dots represent nuclear centroids.
+D. Distributions of five calibration metrics across experimental and simulated lineages.}
+\label{ch3-fig1}
+\end{figure}
+
+To establish a baseline WT model for later perturbation analyses, we first calibrated a spatiotemporal CPM-based ABM of the developing \textit{Drosophila} neuroblast lineage.
+In the WT rule set, the neuroblast divides after growing to $1.166\times$ its initial size.
+Each neuroblast has an apical axis (Figure \ref{ch3-fig1}B dashed line) and a default plane of division which passes through a point located $88\%$ down the apical axis from the apical end of the cell and centered laterally (Figure \ref{ch3-fig1}B top dashed line).
+By default, that division plane is perpendicular to the apical axis (Figure \ref{ch3-fig1}B top dashed line), and division-to-division angular variation is sampled from a distribution centered at $0^\circ$ with a standard deviation of $26^\circ$, matching the scale of the experimental WT angle distribution (see supplemental figure).
+Following division, the larger apical daughter remains a neuroblast, whereas the smaller basal daughter becomes a ganglion mother cell (GMC).
+The GMC then undergoes one final symmetric division along the cardinal axis that yields the longest new cell membrane (Figure \ref{ch3-fig1}B bottom) to produce two neurons. 
+Neurons neither grow nor divide.
+Full parameter values and the calibration workflow are described in Methods.
+% Parameterization details to port into Methods from ARCADE/PARAMETERS_EXPLAINED.md.
+
+We anchored this calibration to WT endpoint summaries derived from the experimental dataset in \texttt{data/exp/processed/exp\_summary.csv}.
+See Methods for experimental data preprocessing details.
+In that dataset, WT lineages contained a mean of $44.93 \pm 21.68$ Pros$^{+}$ cells and exactly one Dpn$^{+}$ neuroblast at the terminal time point.
+WT lineage area averaged $501.2 \pm 125.8~\mu\mathrm{m}^2$, and because WT lineages end with one neuroblast, total and mean neuroblast area were both $51.9 \pm 42.6~\mu\mathrm{m}^2$.
+We calibrated the baseline WT condition shown here (\texttt{wt\_divMean0Stdev26}, \texttt{sim61}, \texttt{VCV=1}) to match these five metric summaries.
+Across simulated WT runs, the model produces lineages with a mean area of $525.4~\mu\mathrm{m}^2$, $46.42$ Pros$^{+}$ cells, one Dpn$^{+}$ neuroblast, and a mean neuroblast area of $64.2~\mu\mathrm{m}^2$, placing the simulated distribution within one standard deviation of the experimental WT mean for all calibration targets (Figure\ref{ch3-fig1}D).
+
+Representative simulated WT lineages also qualitatively resemble experimental WT lineages across the observed range of lineage sizes (Figure\ref{ch3-fig1}C).
+In both simulation and experiment, the neuroblast typically remains peripheral to the lineage while differentiated GMCs and neurons occupy most of the interior.
+Importantly, this peripheral organization was not itself a calibration target.
+Instead, the calibration is performed only against endpoint lineage scale and composition, allowing the spatial organization used in later sections to function as an emergent model behavior rather than a quantity fit by construction.
+
+Together, these results indicate that the calibrated WT CPM captures the expected scale and composition of the lineage while remaining sufficiently unconstrained spatially to serve as a mechanistic testbed for hypotheses about division geometry and lineage organization.
+
+\subsection{Distinct components of WT division geometry differentially affect lineage organization.}
+
+Because spatial organization emerged in the calibrated WT model without being used as a fitting target, we next used that baseline to test which aspects of the imposed division geometry were most important for maintaining the sorted WT lineage morphology.
+In the model, WT division dynamics contain three separable geometric components.
+These are the orientation of the apical axis, the amount of rotation applied to the default plane of division, and the degree to which the division plane is offset away from the apical membrane.
+We systematically perturbed each component while holding the others constant in order to assess its impact on lineage organization.
+To quantify those effects, we used two spatial readouts.
+First, we measured normalized heterotypic contact fraction, which reports the extent to which neuroblast and non-neuroblast cell territories intermingle relative to the amount of mixing expected from the lineage composition alone (see Methods).
+Second, we measured the fraction of the neuroblast perimeter exposed to extracellular space, which reports how peripherally the neuroblast remains positioned within the lineage.
+Together, these metrics distinguish lineages in which the neuroblast remains spatially segregated at the edge from lineages in which it becomes internalized and more intermixed with differentiated progeny.
+
+\begin{figure}[!htbp]
+\centering
+\vspace{-1.5cm}
+\includegraphics[width=.95\textwidth]{fig2/fig2.png}
+\caption{\textbf{Impact of decoupled components of WT division geometry on lineage organization.} 
+A. Depictions of intergenerational rotation mean shift (top), fixed-axis variance sweep (bottom left), and offset shift (bottom right) mechanisms implemented to decouple apical axis orientation, stochastic rotation, and offset shift in the CPM.
+B. Distribution of normalised heterotypic contact values (top) and NB perimeter fraction values (bottom) across different simulated conditions.
+C. Example lineages drawn from each of the simulated conditions. }
+\label{ch3-fig2}
+\end{figure}
+
+\subsubsection{Persistent intergenerational rotation disrupts WT lineage sorting.}
+To test the contribution of persistent intergenerational reorientation, we first varied the amount by which the apical axis rotated from one division to the next (\ref{ch3-fig2} A top).
+In these simulations, fixed-axis variance is held at the biologically grounded WT value of $26^\circ$, and the division offset is held at the calibrated WT value of $88\%$.
+The baseline WT condition uses no persistent mean-shift in intergenerational orientation, whereas perturbed conditions impose apical-axis reorientation drawn from distributions centered at $45^\circ$ or $90^\circ$.
+
+Introducing persistent intergenerational rotation causes a marked loss of the sorted WT morphology (\ref{ch3-fig2} B left, C top).
+Relative to the baseline WT condition, lineages with imposed reorientation show substantially higher normalized heterotypic contact and reduced neuroblast exposure to extracellular space, consistent with neuroblast internalization and increased mixing among cell types.
+This effect is clear at $45^\circ$ and remains strong at $90^\circ$.
+Thus, within the model, maintaining a stable relative orientation across generations appears to be an important requirement for preserving the peripheral neuroblast position and the spatially sorted architecture of the developing WT lineage.
+
+\subsubsection{Increasing fixed-axis variance has limited effects until extreme values.}
+We next asked whether increasing stochastic variation around a stable WT division axis was sufficient to disrupt lineage organization.
+To isolate this effect, we returned the intergenerational rotation mean to the baseline WT value of $0^\circ$ and held the division offset at $88\%$.
+We then increased the standard deviation of fixed-axis variation from the biologically grounded WT value of $26^\circ$ through progressively broader distributions (\ref{ch3-fig2} A bottom left).
+This perturbation differs conceptually from the persistent intergenerational rotation tested above.
+Here, successive divisions continue to fluctuate around the same underlying orientation, rather than drifting persistently away from it over generations.
+
+Across this variance sweep, moderate increases in fixed-axis variability produce only modest changes in lineage organization (\ref{ch3-fig2} B center, C center).
+Normalized heterotypic contact rises gradually as the variance increases, but the effect remains substantially smaller than the disruption caused by persistent intergenerational rotation.
+Likewise, neuroblast exposure to extracellular space declines progressively across the sweep rather than collapsing immediately.
+Qualitatively, these lineages largely retain their sorted morphologies, with the neuroblast still positioned near the lineage periphery.
+Thus, the calibrated WT lineage tolerated appreciable stochastic variation around a stable axis while largely preserving its sorted morphology.
+
+At the highest tested variance ($90^\circ$), however, this tolerance begins to break down.
+Under this extreme condition, large rotations of the default division axis produce more mixing and reduced neuroblast exposure.
+Even so, the resulting disorganization remains weaker than that produced by persistent intergenerational rotation (\ref{ch3-fig2} B center, C center).
+These results indicate that stochastic division-angle variability can disrupt lineage organization, but only when it becomes very large.
+Within the model, these results suggest that preserving a consistent central orientation across generations is more important for maintaining WT spatial organization than tightly minimizing every division-to-division fluctuation around that orientation.
+
+\subsubsection{Reducing asymmetric offset produces only modest disorganization relative to intergenerational rotation.}
+We next asked how strongly lineage organization depends on maintaining the WT asymmetric division offset.
+To isolate this effect, we held the intergenerational rotation mean at the baseline WT value of $0^\circ$ and the fixed-axis variance at $26^\circ$ while shifting the division plane progressively away from the calibrated WT offset of $88\%$ toward more symmetric placements (\ref{ch3-fig2} A bottom right).
+We tested offsets of $75\%$, $62\%$, and $50\%$.
+
+Moving the division plane toward the center increases both normalized heterotypic contact and neuroblast internalization, indicating a measurable loss of lineage sorting (\ref{ch3-fig2} B right, C bottom).
+However, across this sweep, the magnitude of the effect remains smaller on average than that produced by persistent intergenerational rotation (\ref{ch3-fig2} B right).
+Qualitatively, the offset-perturbed lineages also remain fairly organized, with the neuroblast still generally occupying a peripheral position even when it if fully surrounded by cells (\ref{ch3-fig2} C bottom).
+Thus we conclude that although maintaining the WT offset contributes to robust sorting, the model does not suggest that offset alone is the dominant determinant of lineage organization.
+
+One complication in interpreting this perturbation is that reducing the offset increases daughter birth sizes and therefore lineage size.
+In the smaller simulation domains used initially, these larger lineages frequently encountered the domain boundaries.
+We therefore repeated the offset-shift simulations in expanded fields of view, although even in those larger domains some lineages still contacted the walls at later times.
+For that reason, we interpret the offset-shift results more cautiously than the intergenerational-rotation and fixed-axis-variance results.
+Even with that caveat, both the quantitative spatial readouts and the representative lineages support the same qualitative conclusion: reducing asymmetric offset perturbs sorting, but less strongly than persistent intergenerational rotation.
+
+\subsection{Cell-size effects are insufficient to constrain \textit{mud} mutant lineage overgrowth.}
+We next used our model to explore which regulatory mechanisms would be sufficient to constrain lineage overgrowth in \textit{mud} mutants.
+We implemented a \textit{mud} mutant cell type with the same baseline parameters as our calibrated WT simulations, then added a rule for symmetric division: whenever the division plane rotates past $45^\circ$ from the apical/basal axis, the cell deterministically divides symmetrically along that axis, yielding two neuroblast daughters.
+Because division-plane rotation is drawn from a normal distribution with mean $0^\circ$ and standard deviation $26^\circ$, this rule causes \textit{mud} mutant neuroblasts to divide symmetrically about 13\% of the time.
+Both this rate and the rotation-based trigger are consistent with experimental observations.
+We also set the adhesion parameter so that neuroblasts would have stronger adhesion to each other than to all other cells to reflect the experimental observation that neuroblasts in \textit{mud} mutant lineages tend to be next to each other.
+
+We first asked whether the cell-size difference between symmetrically and asymmetrically derived NBs was itself sufficient to constrain mutant lineage overgrowth.
+Because symmetric division produces two undersized daughters, fixing the division-volume threshold at the value expected for WT NBs would force mutant NBs born of symmetric divisions to spend additional time growing before dividing again, slowing lineage expansion.
+We therefore implemented a constant division threshold calibrated to the expected WT division volume (see Methods) and simulated \textit{mud} mutant lineages with all other parameters held at their WT values.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=.9\textwidth]{fig3/fig3.png}
+\caption{\textbf{The model predicts that unregulated \textit{mud} mutant lineages should overgrow WT lineages.}
+\textbf{A.} Schematic of an NB undergoing symmetric division as implemented in the model.
+\textbf{B.} Distributions of five non-spatial calibration metrics across WT experimental, WT simulated, \textit{mud} mutant experimental, and unregulated \textit{mud} simulated lineages.
+\textbf{C.} Representative WT and unregulated \textit{mud} mutant simulated lineages at the 10th, 50th, and 90th percentiles of lineage area.}
+\label{ch3-fig3}
+\end{figure}
+
+The simulated \textit{mud} mutant lineages outgrew the simulated and experimental WT lineages by all five of our calibration metrics. %TODO: make sure I have consistent language around these metrics. "Calibration metrics"
+
+\subsection{Candidate regulatory mechanisms constrain mud mutant overgrowth only when division thresholds scale with birth size.} %TODO: EDIT THIS SECTION
+
+Two salient differences between \textit{mud} mutant and WT neuroblast lineages are that \textit{mud} mutant lineages have more NBss and that the NBs in \textit{mud} mutant lineages are on average smaller than WT neuroblasts (supplemental data).
+We were curious whether regulation based on either of those features could constrain mutant lineage overgrowth.
+To explore this, we implemented four regulatory regiemes.
+In neuroblast volume based (VOL) regulation, we set a constant reference NB volume which is equal to the expected average volume of a WT NB.
+NB growth rate is repressed if its volume is less than that reference and accelerated if its volume is greater than that reference point.
+This is exploring the hypothetical scenerio in which growth rate is linked to neuroblast volume and asking whether, in this system, that regime would be sufficient to constrain mutant neuroblast lineage growth.
+We implemented this regulation in both an ABM-like and PDE-like manner.
+In the ABM-like implementation, each NB's growth rate is independently regulated by its volume.
+In the PDE-like implementation, all NBs in the simulation have the same growth rate, and each NB's growth rate is regulated by the average volume across all NBs in the simulation.
+The PDE-like implementation allows us to explore a hypothetical situation in which the growth rate of NBs is influenced by both the NB's own volume and the volume of the other NBs in the simulation.
+We also implemented a NB-contact (NB) based regulation.
+In this regieme, NB growth rate is suppressed via a hill function based on how many NB neighbors the NB has.
+We similarly implemented this in both an ABM and PDE-like manner.
+In the ABM-like implementation each NB's growth is repressed by its number of NB neighbors and in the PDE-like manner eahc NB's growth is repressed by the total number of NBs in the simulation.
+This could represent some kind of diffusible signaling factor.
+
+We applied both of these regulatory regiemes with both the constant division threshold (VCV=0) and a dynamic division threshold (VCV=1) in which the NB division volume threshold is a function of the starting NB volume Figure\ref{ch3-fig4} A.
+
+We first confirmed that each of the four candidate regulatory dynamics, when applied to our calibrated WT cell type, leaves the five non-spatial calibration metrics broadly within the WT experimental range (supplement).
+
+When simulated with the fixed division threshold (VCV=0), none of the four regulatory mechanisms, simulated \textit{mud} mutant lineages remained well above the experimental \textit{mud} range on lineage area, Pros count, NB count, and total NB area (Fig.~\ref{ch3-fig4}B, light boxes).
+NB-contact regulation came closest of the four but did not bring all five calibration metrics into agreement with the experimental data.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=.9\textwidth]{fig4/fig4.png}
+\caption{\textbf{Volume-based regulation paired with birth-size-dependent division thresholds constrains \textit{mud} mutant lineage overgrowth.}
+\textbf{A.} Schematic contrasting the two threshold rules.
+\textbf{B.} Endpoint distributions of the five calibration metrics across the unregulated baseline plus four candidate regulatory dynamics (NB-ABM, NB-PDE, volume-ABM, volume-PDE), under each threshold rule (light: VCV=0; dark: VCV=1). The red band marks the experimental \textit{mud} interquartile range; the dashed red line marks the experimental median. Y-axes are log-scaled.
+\textbf{C.} Representative simulated \textit{mud} mutant lineages at the 50th percentile of lineage area, organized by regulatory dynamic (columns) and threshold rule (rows).}
+\label{ch3-fig4}
+\end{figure}
+
+We then re-ran the same four candidate regulatory dynamics with VCV=1, the threshold rule under which each NB divides at a multiple of its own birth size rather than at a shared absolute volume.
+The biological intuition is that, under this rule, the cell-size memory established by a symmetric division propagates forward across generations: a smaller-born mutant NB has a smaller division threshold, so it divides at a smaller volume, producing daughters that are themselves smaller still (Fig.~\ref{ch3-fig4}A).
+This keeps \textit{mud} mutant NBs that originate from a symmetric division persistently deeper in the repressive regime imposed by the regulatory dynamic, rather than allowing them to recover to WT-equivalent volumes after a single cycle.
+
+Under this threshold rule, the volume-based regulatory dynamics brought simulated \textit{mud} mutant lineages into the experimental range on lineage area, Pros count, NB count, and total NB area (Fig.~\ref{ch3-fig4}B, dark boxes; Fig.~\ref{ch3-fig4}C,D).
+Mean NB area is the one metric on which volume-PDE drifts below the experimental range: the smaller per-cycle thresholds produce smaller individual NBs, undershooting the experimental average. %TODO: confirm consistency with biological expectations or note as caveat.
+NB-contact regulation under VCV=1 also tracks the experimental range more closely than it did under VCV=0, but remains less precise than the volume-based dynamics across the calibration metrics.
+The missing ingredient in the unregulated and VCV=0-regulated cases was therefore not a different regulatory mechanism, but a different threshold rule.
+
+Together, these results indicate that constraining \textit{mud} mutant lineage overgrowth in our model requires both a regulatory dynamic that responds to local cellular context and a threshold rule that allows the smaller birth size of symmetric-division descendants to propagate forward in time.
+
+\subsection{Preferential NB–NB adhesion is not required for NB clustering in regulated \textit{mud} mutant lineages}
+
+In the simulated \textit{mud} mutant lineages from Result 4, neuroblasts frequently appeared adjacent to one another, particularly under the volume-based regulatory dynamics that brought lineages closest to the experimental \textit{mud} range.
+We had initialized these simulations with preferential NB–NB adhesion so we asked whether this adhesion term was responsible for the observed clustering.
+
+We re-ran the volume-based simulations under VCV=1, this time setting the NB–NB adhesion strength equal to all other cell-cell adhesions in the simulation, and compared each run to its with-adhesion counterpart at the same seed.
+
+Removing preferential NB–NB adhesion produced nearly indistinguishable distributions on two of the three spatial metrics: the normalized heterotypic contact fraction, a measure of mixing between NBs and non-NB progeny (Fig.~\ref{ch3-fig5}B), and the homotypic NB contact fraction, the fraction of NB inter-cell contacts that are NB-to-NB (Fig.~\ref{ch3-fig5}D).
+Both volume-based regulatory dynamics retained roughly 20\% of NB inter-cell contacts as NB-NB regardless of adhesion state, indicating that NB clustering in this model emerges from birth geometry and limited subsequent displacement rather than from a preferential adhesion term.
+Representative paired lineages confirmed this visually (Fig.~\ref{ch3-fig5}A): the spatial layout of NBs and progeny looks essentially the same with or without preferential adhesion.
+
+%The one metric that did differ modestly between adhesion states was the fraction of NB perimeter exposed to extracellular space (Fig.~\ref{ch3-fig5}C), which shifted slightly and in opposite directions for the two regulatory dynamics.
+%We interpret this as evidence that preferential adhesion can affect how NBs are positioned at the lineage surface, but does not affect either the mixing of NBs with progeny or the homotypic clustering of NBs themselves.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=.7\textwidth]{fig5/fig5.png}
+\caption{\textbf{Removing preferential NB-NB adhesion has minimal effect on NB clustering or mixing in regulated \textit{mud} mutant lineages.}
+\textbf{A.} Representative simulated \textit{mud} mutant lineages from each (regulatory dynamic $\times$ adhesion state) combination, picked closest to the mean homotypic NB contact fraction within their group. Rows: regulatory dynamic (volume-ABM, volume-PDE under VCV=1). Columns: with vs without preferential NB-NB adhesion.
+\textbf{B.} Distributions of the normalized heterotypic contact fraction (a measure of mixing between NBs and non-NB progeny) for each regulatory dynamic, the fraction of NB perimeter exposed to extracellular space, and the fraction of NB inter-cell contacts that are NB-to-NB, with and without preferential NB-NB adhesion.}
+\label{ch3-fig5}
+\end{figure}
+
+Together, these results indicate that the NB proximity observed in our model is largely a consequence of birth geometry and limited divisions in constrained mutant lineages and does not require an adhesion-driven mechanism to be maintained.
