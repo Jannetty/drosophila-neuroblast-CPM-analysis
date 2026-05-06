@@ -16,12 +16,10 @@ from matplotlib.lines import Line2D
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIG_DIR = REPO_ROOT / "docs" / "tex_draft" / "figures"
 
-mpl.rcParams.update({
-    "font.family": "sans-serif",
-    "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
-    "font.size": 16,
-    "svg.fonttype": "none",  # keep text as text in SVG so it's editable
-})
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _style import RCPARAMS as _RCPARAMS, FONT_SIZE_TITLE, FONT_SIZE_LABEL
+mpl.rcParams.update(_RCPARAMS)
 
 # --- model parameters (illustrative only) ---
 V_STAR = 1.0          # WT division volume in VCV=0 / WT steady-state in VCV=1
@@ -103,7 +101,7 @@ def main():
 
     ax.axhline(V_STAR, **THRESHOLD_KW, zorder=2)
     ax.text(0.04, V_STAR + 0.04, "shared threshold V*",
-            fontsize=14, va="bottom", color="#555555")
+            fontsize=FONT_SIZE_LABEL, va="bottom", color="#555555")
 
     for i, (t, v) in enumerate(wt0):
         ax.plot(t, v, label="WT NB  (asymm.)" if i == 0 else None, zorder=4, **WT_KW)
@@ -113,9 +111,9 @@ def main():
         ax.plot(t, v, label="mutant NB  (symm.)" if i == 0 else None, zorder=4, **MUT_KW)
     draw_division_drop(ax, mut0, MUT_FRAC_DIV, **MUT_KW)
 
-    ax.set_title("VCV = 0    fixed threshold", fontsize=18, pad=10)
-    ax.set_xlabel("time", fontsize=16)
-    ax.set_ylabel("NB volume", fontsize=16)
+    ax.set_title("VCV = 0    fixed threshold", fontsize=FONT_SIZE_TITLE, pad=10)
+    ax.set_xlabel("time")
+    ax.set_ylabel("NB volume")
     ax.set_yticks([0, MUT_BIRTH, WT_BIRTH, V_STAR], ["0", "½ V*", "⅔ V*", "V*"])
     ax.set_xticks([])
     ax.set_ylim(0, 1.18)
@@ -126,10 +124,10 @@ def main():
     division_marker = Line2D([0], [0], marker="o", color="black",
                              markersize=6, linestyle="None", label="division event")
     handles, _ = ax.get_legend_handles_labels()
-    ax.legend(handles=handles + [division_marker], loc="lower left", fontsize=13, frameon=False)
+    ax.legend(handles=handles + [division_marker], loc="lower left", fontsize=FONT_SIZE_LABEL, frameon=False)
 
     ax.text(mut0[-1][0][-1] + 0.05, V_STAR, "mutant threshold\nstays constant",
-            fontsize=12, va="center", ha="left", color="#cc4444")
+            fontsize=FONT_SIZE_LABEL, va="center", ha="left", color="#cc4444")
 
     # ============================================================
     # Right: VCV = 1
@@ -159,20 +157,20 @@ def main():
 
     # Threshold labels
     ax.text(wt1_xmax + 0.05, V_STAR, "WT threshold\n(stable)",
-            fontsize=12, va="center", ha="left", color="#555555")
+            fontsize=FONT_SIZE_LABEL, va="center", ha="left", color="#555555")
     last_mut = mut1[-1]
     ax.text(last_mut[0][-1] + 0.05, last_mut[1][-1], "mutant threshold falls\neach symmetric division",
-            fontsize=12, va="center", ha="left", color="#cc4444")
+            fontsize=FONT_SIZE_LABEL, va="center", ha="left", color="#cc4444")
 
-    ax.set_title("VCV = 1    threshold scales with birth size", fontsize=18, pad=10)
-    ax.set_xlabel("time", fontsize=16)
+    ax.set_title("VCV = 1    threshold scales with birth size", fontsize=FONT_SIZE_TITLE, pad=10)
+    ax.set_xlabel("time")
     ax.set_xticks([])
     ax.set_xlim(left=-0.05)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
     handles, _ = ax.get_legend_handles_labels()
-    ax.legend(handles=handles + [division_marker], loc="lower left", fontsize=13, frameon=False)
+    ax.legend(handles=handles + [division_marker], loc="lower left", fontsize=FONT_SIZE_LABEL, frameon=False)
 
     fig.tight_layout()
 
