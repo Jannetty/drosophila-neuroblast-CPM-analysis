@@ -35,17 +35,10 @@ EXP_SUMMARY_CSV = REPO_ROOT / "data" / "exp" / "processed" / "exp_summary.csv"
 EXP_INDEX_CSV = REPO_ROOT / "data" / "exp" / "processed" / "lineage_index.csv"
 EXP_ANALYSIS_DIR = REPO_ROOT / "data" / "exp" / "processed" / "analysis"
 
-plt.rcParams.update(
-    {
-        "font.family": "sans-serif",
-        "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
-        "font.size": 16,
-        "axes.titlesize": 20,
-        "axes.labelsize": 18,
-        "xtick.labelsize": 16,
-        "ytick.labelsize": 16,
-    }
-)
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _style import RCPARAMS as _RCPARAMS, FONT_SIZE_TITLE, FONT_SIZE_LABEL, FONT_SIZE_SMALL
+plt.rcParams.update(_RCPARAMS)
 
 
 def load_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -201,7 +194,7 @@ def representative_lineages_panel(wt_runs: pd.DataFrame, mud_runs: pd.DataFrame,
     ]
 
     for col, pct in enumerate(REPRESENTATIVE_PERCENTILES):
-        axes[0, col].set_title(f"{int(round(pct * 100))}th percentile", pad=6, fontsize=20)
+        axes[0, col].set_title(f"{int(round(pct * 100))}th percentile", pad=6, fontsize=FONT_SIZE_TITLE)
 
     snapshots = []
     for row_idx, (row_label, condition, sim_id, rep_df) in enumerate(rows):
@@ -222,7 +215,7 @@ def representative_lineages_panel(wt_runs: pd.DataFrame, mud_runs: pd.DataFrame,
             spine.set_visible(False)
         ax.set_xlabel(
             f"run {int(row['run_id']):04d}\narea = {row['lin_area_vox'] * AREA_SCALE:.0f} µm²",
-            fontsize=15,
+            fontsize=FONT_SIZE_SMALL,
             labelpad=2,
         )
         ax.xaxis.set_label_coords(0.5, -0.03)
@@ -235,7 +228,7 @@ def representative_lineages_panel(wt_runs: pd.DataFrame, mud_runs: pd.DataFrame,
             row_label,
             ha="right",
             va="center",
-            fontsize=20,
+            fontsize=FONT_SIZE_TITLE,
             fontweight="bold",
         )
 
@@ -277,11 +270,10 @@ def endpoint_metrics_panel(
         ]
         ylabel = unit if ax is axes[0] else None
         make_boxplot_panel(ax, groups, title, ylabel, fill_map)
-        ax.title.set_fontsize(20)
         if ax is axes[0]:
-            ax.set_ylabel(unit, fontsize=18)
-        ax.tick_params(axis="x", labelsize=16, pad=2)
-        ax.tick_params(axis="y", labelsize=15)
+            ax.set_ylabel(unit, fontsize=FONT_SIZE_LABEL)
+        ax.tick_params(axis="x", labelsize=FONT_SIZE_SMALL, pad=2)
+        ax.tick_params(axis="y", labelsize=FONT_SIZE_SMALL)
         for label in ax.get_xticklabels():
             label.set_rotation(35)
             label.set_ha("right")
@@ -312,10 +304,8 @@ def regulatory_hypothesis_panel(
             ("mud Exp", vals(exp_mud)),
         ]
         make_boxplot_panel(ax, groups, title, ylabel, fill_map)
-        ax.title.set_fontsize(20)
-        ax.yaxis.label.set_fontsize(18)
-        ax.tick_params(axis="x", labelsize=16, pad=2)
-        ax.tick_params(axis="y", labelsize=15)
+        ax.tick_params(axis="x", labelsize=FONT_SIZE_SMALL, pad=2)
+        ax.tick_params(axis="y", labelsize=FONT_SIZE_SMALL)
         for label in ax.get_xticklabels():
             label.set_rotation(35)
             label.set_ha("right")
