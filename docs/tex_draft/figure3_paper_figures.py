@@ -23,7 +23,7 @@ WT_CONDITION = "wt_divMean0Stdev26"
 WT_SIM_ID = "vcv1_noreg"
 WT_VCV = 1
 
-MUD_CONDITION = "mudmut_divMean0Stdev26_rotMean0Stdev30"
+MUD_CONDITION = "mudmut_divMean0Stdev50_rotMean0Stdev30"
 MUD_SIM_ID = "vcv0_noreg"
 MUD_VCV = 0
 
