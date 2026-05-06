@@ -194,7 +194,9 @@ def representative_lineages_panel(wt_runs: pd.DataFrame, mud_runs: pd.DataFrame,
     ]
 
     for col, pct in enumerate(REPRESENTATIVE_PERCENTILES):
-        axes[0, col].set_title(f"{int(round(pct * 100))}th percentile\nlineage volume", pad=6, fontsize=FONT_SIZE_TITLE)
+        axes[0, col].set_title(f"{int(round(pct * 100))}th percentile", pad=20, fontsize=FONT_SIZE_TITLE)
+        axes[0, col].text(0.5, 1.0, "lineage area", transform=axes[0, col].transAxes,
+                          ha="center", va="bottom", fontsize=FONT_SIZE_SMALL)
 
     snapshots = []
     for row_idx, (row_label, condition, sim_id, rep_df) in enumerate(rows):
@@ -268,8 +270,7 @@ def endpoint_metrics_panel(
             ("mud Exp", vals(exp_mud)),
             ("mud Sim", vals(mud_runs)),
         ]
-        ylabel = unit if col_idx in (0, 3) else None
-        make_boxplot_panel(ax, groups, title, ylabel, fill_map)
+        make_boxplot_panel(ax, groups, title, unit, fill_map)
         ax.tick_params(axis="x", labelsize=FONT_SIZE_SMALL, pad=2)
         ax.tick_params(axis="y", labelsize=FONT_SIZE_SMALL)
         for label in ax.get_xticklabels():
