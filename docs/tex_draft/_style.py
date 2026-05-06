@@ -1,6 +1,6 @@
 FONT_SIZE_TITLE = 20
 FONT_SIZE_LABEL = 16
-FONT_SIZE_SMALL = 13
+FONT_SIZE_SMALL = 15
 
 RCPARAMS = {
     "font.family": "sans-serif",

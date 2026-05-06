@@ -194,7 +194,7 @@ def representative_lineages_panel(wt_runs: pd.DataFrame, mud_runs: pd.DataFrame,
     ]
 
     for col, pct in enumerate(REPRESENTATIVE_PERCENTILES):
-        axes[0, col].set_title(f"{int(round(pct * 100))}th percentile", pad=6, fontsize=FONT_SIZE_TITLE)
+        axes[0, col].set_title(f"{int(round(pct * 100))}th percentile\nlineage volume", pad=6, fontsize=FONT_SIZE_TITLE)
 
     snapshots = []
     for row_idx, (row_label, condition, sim_id, rep_df) in enumerate(rows):
@@ -244,10 +244,10 @@ def endpoint_metrics_panel(
 ) -> plt.Figure:
     metric_specs = [
         ("lin_area_vox", "Lineage area", "µm²", True),
-        ("n_pros", "Pros count", "cells", False),
-        ("n_dpn", "NB count", "cells", False),
         ("dpn_area_vox", "Total NB area", "µm²", True),
         ("avg_dpn_area_vox", "Mean NB area", "µm²/cell", True),
+        ("n_pros", "Pros count", "cells", False),
+        ("n_dpn", "NB count", "cells", False),
     ]
     fill_map = {
         "WT Exp": "#d9d9d9",
@@ -257,7 +257,7 @@ def endpoint_metrics_panel(
     }
 
     fig, axes = plt.subplots(1, len(metric_specs), figsize=(18.2, 5.2))
-    for ax, (metric_key, title, unit, is_area) in zip(axes, metric_specs):
+    for col_idx, (ax, (metric_key, title, unit, is_area)) in enumerate(zip(axes, metric_specs)):
         def vals(df: pd.DataFrame) -> np.ndarray:
             values = df[metric_key].astype(float).to_numpy()
             return values * AREA_SCALE if is_area else values
@@ -268,10 +268,8 @@ def endpoint_metrics_panel(
             ("mud Exp", vals(exp_mud)),
             ("mud Sim", vals(mud_runs)),
         ]
-        ylabel = unit if ax is axes[0] else None
+        ylabel = unit if col_idx in (0, 3) else None
         make_boxplot_panel(ax, groups, title, ylabel, fill_map)
-        if ax is axes[0]:
-            ax.set_ylabel(unit, fontsize=FONT_SIZE_LABEL)
         ax.tick_params(axis="x", labelsize=FONT_SIZE_SMALL, pad=2)
         ax.tick_params(axis="y", labelsize=FONT_SIZE_SMALL)
         for label in ax.get_xticklabels():
