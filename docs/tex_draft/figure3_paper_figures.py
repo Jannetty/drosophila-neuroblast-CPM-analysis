@@ -314,7 +314,7 @@ def regulatory_hypothesis_panel(
 
 
 def confirm_sim51_configuration() -> dict[str, object]:
-    config_path = REPO_ROOT / "data" / "sim" / "sweep" / MUD_CONDITION / MUD_SIM_ID / "2026-04-26-biosim51_mudmut_volume_none_detdiff.json"
+    config_path = REPO_ROOT / "data" / "sim" / "sweep" / MUD_CONDITION / MUD_SIM_ID / "2026-04-26-biovcv0_noreg_mudmut_volume_none_detdiff.json"
     config = json.loads(config_path.read_text())
     pop = config["populations"]["fly-stem-mudmut"]
     potts = config["potts"]
