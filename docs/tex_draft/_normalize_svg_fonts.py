@@ -31,11 +31,13 @@ SVG_LABEL = SVG_TITLE * 16 / 20
 SVG_SMALL = SVG_TITLE * 13 / 20
 TIERS = (SVG_TITLE, SVG_LABEL, SVG_SMALL)
 
+# fig4 is excluded: Panel A is an inline matplotlib SVG whose font-size values
+# are already pre-scaled by Inkscape to account for the embed transform.
+# The normalizer would corrupt them. Re-add fig4 once Panel A is a PNG <image>.
 ALL_SVG_FILES = [
     "fig1/fig1.svg",
     "fig2/fig2.svg",
     "fig3/fig3.svg",
-    "fig4/fig4.svg",
     "fig5/fig5.svg",
 ]
 
