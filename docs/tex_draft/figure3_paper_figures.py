@@ -190,7 +190,7 @@ def representative_lineages_panel(wt_runs: pd.DataFrame, mud_runs: pd.DataFrame,
     wt_rep = pick_percentile_runs(wt_runs, "lin_area_vox", REPRESENTATIVE_PERCENTILES)
     mud_rep = pick_percentile_runs(mud_runs, "lin_area_vox", REPRESENTATIVE_PERCENTILES)
 
-    fig, axes = plt.subplots(2, 3, figsize=(11.5, 7.6))
+    fig, axes = plt.subplots(2, 3, figsize=(11.0, 7.8))
     rows = [
         ("WT", WT_CONDITION, WT_SIM_ID, wt_rep),
         ("mudmut\nunregulated", MUD_CONDITION, MUD_SIM_ID, mud_rep),
@@ -261,7 +261,7 @@ def endpoint_metrics_panel(
         "mud Sim": "#5f5f5f",
     }
 
-    fig, axes = plt.subplots(1, len(metric_specs), figsize=(18.2, 5.2))
+    fig, axes = plt.subplots(1, len(metric_specs), figsize=(11.0, 3.8))
     for col_idx, (ax, (metric_key, title, unit, is_area)) in enumerate(zip(axes, metric_specs)):
         def vals(df: pd.DataFrame) -> np.ndarray:
             values = df[metric_key].astype(float).to_numpy()
@@ -291,7 +291,7 @@ def regulatory_hypothesis_panel(
         "WT Exp": EXP_FILL_COLOR,
         "mud Exp": EXP_FILL_COLOR,
     }
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 5.2))
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 5.5))
     specs = [
         ("n_dpn", "NB count", "cells", False),
         ("avg_dpn_area_vox", "Mean NB area", "µm²/cell", True),
