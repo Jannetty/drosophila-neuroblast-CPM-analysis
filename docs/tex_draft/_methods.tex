@@ -94,10 +94,22 @@ After WT division, the larger apical daughter remains a neuroblast and the small
 The GMC divides once more symmetrically to produce two neurons, and neurons neither grow nor divide.
 
 \subsection{\textit{mud} mutant growth and division rules}
-To model \textit{mud} mutant lineages, we impose a threshold at \(\pm 45^\circ\) such that any sampled rotation of the division plane exceeding \(45^\circ\) in magnitude is converted into a deterministic symmetric division along the neuroblast apical axis.
-In the mutant rule set used here, this yields approximately 13\% symmetric divisions, consistent with experimental observation.
+To model \textit{mud} mutant lineages, division-plane rotation at each division is drawn from a normal distribution centered at \(0^\circ\) with standard deviation \(50^\circ\), compared with \(26^\circ\) for WT.
+We impose a threshold at \(\pm 75^\circ\) such that any sampled rotation exceeding \(75^\circ\) in magnitude is converted into a deterministic symmetric division along the neuroblast apical axis.
+In the mutant rule set used here, this yields approximately 13\% symmetric divisions, consistent with experimental observation \cite{CabernardDoe2009}.
 Mutant daughter neuroblasts inherit apical axes rotated relative to the parent axis by an amount drawn from a normal distribution with mean \(0^\circ\) and standard deviation \(30^\circ\).
 This inheritance rule is chosen to approximate the qualitative loss of stable spindle orientation observed experimentally in \textit{mud} mutant lineages.
+
+\paragraph{Calibration of division-plane rotation parameters.}
+The division-plane rotation standard deviation and symmetric-division threshold for \textit{mud} mutant simulations were calibrated from time-lapse measurements of NB division-axis angles tracked across successive divisions in \textit{mud} mutant and WT animals (Supplemental Figure X; see also \cite{CabernardDoe2009}).
+Step-to-step absolute rotation angles were computed from the change in the three-dimensional spindle-axis vector between consecutive time points and binned in \(15^\circ\) increments spanning \(0^\circ\)--\(180^\circ\).
+The \textit{mud} mutant distribution contained no observed divisions in the \(75^\circ\)--\(90^\circ\) bin, whereas the WT distribution showed no analogous gap.
+A similar discontinuity in \textit{mud} mutant division-axis rotation was reported by \citet{CabernardDoe2009}.
+We therefore set the symmetric-division threshold at \(75^\circ\): any rotation exceeding this value is classified as a symmetric division.
+
+Under this threshold, \(13\%\) of observed \textit{mud} mutant division steps exceeded \(90^\circ\) and were classified as symmetric divisions, consistent with the symmetric-division frequency reported by \citet{CabernardDoe2009}.
+We calibrated the rotation standard deviation by finding the \(\sigma\) of a \(N(0,\,\sigma^2)\) distribution satisfying \(P(|X| > 75^\circ) \approx 13\%\), which yields \(\sigma = 50^\circ\).
+As a cross-check, the empirical standard deviation of the observed step-to-step rotations computed after excluding values greater than \(90^\circ\) was \(44^\circ\), which we considered sufficiently consistent with the model value of \(50^\circ\).
 
 \subsubsection{Imposed and volume-sensitive division thresholds}
 The division threshold for \textit{mud} mutants is implemented in two different ways.
