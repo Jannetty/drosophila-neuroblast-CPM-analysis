@@ -20,7 +20,7 @@ Generates panels **B**, **C**, **D** of Figure 4. Panel A (VCV=0 vs VCV=1 schema
 - **C** — representative *mud* lineages (50th percentile by lineage area) for {unregulated, NB-contact, volume-ABM, volume-PDE} × {VCV=0, VCV=1}.
 - **D** — the closest-to-experimental VCV=0 mechanism vs the closest-to-experimental VCV=1 mechanism vs experimental *mud*, across all five calibration metrics.
 
-`mudmut_divMean0Stdev26_rotMean0Stdev30` is the only *mud* condition used here. sim41–45 = VCV=1, sim51–55 = VCV=0; within each block: 1=NONE, 2=NB-ABM, 3=VOL-ABM, 4=NB-PDE, 5=VOL-PDE.
+`mudmut_divMean0Stdev50_rotMean0Stdev30` is the only *mud* condition used here. vcv1_* = VCV=1, vcv0_* = VCV=0; within each block: noreg=NONE, nb_abm=NB-ABM, vol_abm=VOL-ABM, nb_pde=NB-PDE, vol_pde=VOL-PDE.
 """),
 
     ("code", """\
@@ -53,19 +53,11 @@ from npa.sim_viz import load_raw_snapshot_full, render_raw
 FIG_DIR = REPO_ROOT / "docs" / "tex_draft" / "figures"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
-mpl.rcParams.update({
-    "font.family": "sans-serif",
-    "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
-    "font.size": 16,
-    "axes.titlesize": 20,
-    "axes.labelsize": 18,
-    "xtick.labelsize": 16,
-    "ytick.labelsize": 16,
-    "axes.linewidth": 0.8,
-    "pdf.fonttype": 42,
-    "ps.fonttype": 42,
-    "savefig.dpi": 300,
-})
+_style_dir = str(REPO_ROOT / "docs" / "tex_draft")
+if _style_dir not in sys.path:
+    sys.path.insert(0, _style_dir)
+from _style import RCPARAMS as _RCPARAMS, FONT_SIZE_TITLE, FONT_SIZE_LABEL, EXP_FILL_COLOR, EXP_MEDIAN_COLOR
+mpl.rcParams.update(_RCPARAMS)
 
 print(f"Repo root: {REPO_ROOT}")
 print(f"Output dir: {FIG_DIR}")
@@ -75,20 +67,20 @@ print(f"Output dir: {FIG_DIR}")
 DS_UM_PER_VOX = 0.3
 AREA_SCALE = DS_UM_PER_VOX ** 2
 
-MUD_CONDITION = "mudmut_divMean0Stdev26_rotMean0Stdev30"
+MUD_CONDITION = "mudmut_divMean0Stdev50_rotMean0Stdev30"
 
 # (sim_id, VCV, regulatory_dynamic)
 SIM_MAP: list[tuple[str, int, str]] = [
-    ("sim41", 1, "NONE"),
-    ("sim42", 1, "NB-ABM"),
-    ("sim43", 1, "VOL-ABM"),
-    ("sim44", 1, "NB-PDE"),
-    ("sim45", 1, "VOL-PDE"),
-    ("sim51", 0, "NONE"),
-    ("sim52", 0, "NB-ABM"),
-    ("sim53", 0, "VOL-ABM"),
-    ("sim54", 0, "NB-PDE"),
-    ("sim55", 0, "VOL-PDE"),
+    ("vcv1_noreg",  1, "NONE"),
+    ("vcv1_nb_abm", 1, "NB-ABM"),
+    ("vcv1_vol_abm", 1, "VOL-ABM"),
+    ("vcv1_nb_pde", 1, "NB-PDE"),
+    ("vcv1_vol_pde", 1, "VOL-PDE"),
+    ("vcv0_noreg",  0, "NONE"),
+    ("vcv0_nb_abm", 0, "NB-ABM"),
+    ("vcv0_vol_abm", 0, "VOL-ABM"),
+    ("vcv0_nb_pde", 0, "NB-PDE"),
+    ("vcv0_vol_pde", 0, "VOL-PDE"),
 ]
 
 DYNAMIC_ORDER = ["NONE", "NB-ABM", "NB-PDE", "VOL-ABM", "VOL-PDE"]
@@ -111,23 +103,23 @@ PANEL_C_LABELS = {
 }
 
 VCV_FILL = {0: "#d9d9d9", 1: "#5f5f5f"}
-EXP_BAND_COLOR = "#c0392b"
+EXP_BAND_COLOR = EXP_MEDIAN_COLOR
 EXP_BAND_ALPHA = 0.13
 
 WT_CONDITION = "wt_divMean0Stdev26"
-WT_SIM_ID = "sim61"
+WT_SIM_ID = "vcv1_vol_abm"
 WT_VCV = 1
 
 METRIC_SPECS = [
     ("lin_area_vox", "Lineage area", "µm²", True),
-    ("n_pros", "Pros count", "cells", False),
-    ("n_dpn", "NB count", "cells", False),
     ("dpn_area_vox", "Total NB area", "µm²", True),
     ("avg_dpn_area_vox", "Mean NB area", "µm²/cell", True),
+    ("n_pros", "Pros count", "cells", False),
+    ("n_dpn", "NB count", "cells", False),
 ]
 
-SIM_METRICS_CSV = REPO_ROOT / "data" / "sim" / "processed_div26" / "sim_metrics_last.csv"
-SIM_RUN_INDEX_CSV = REPO_ROOT / "data" / "sim" / "processed_div26" / "sim_run_index.csv"
+SIM_METRICS_CSV = REPO_ROOT / "data" / "sim" / "processed_sweep" / "sim_metrics_last.csv"
+SIM_RUN_INDEX_CSV = REPO_ROOT / "data" / "sim" / "processed_sweep" / "sim_run_index.csv"
 EXP_INDEX_CSV = REPO_ROOT / "data" / "exp" / "processed" / "lineage_index.csv"
 EXP_ANALYSIS_DIR = REPO_ROOT / "data" / "exp" / "processed" / "analysis"
 """),
@@ -289,11 +281,9 @@ def panel_b() -> plt.Figure:
         ax.set_xticks(group_centers, [DYNAMIC_LABELS[d] for d in DYNAMIC_ORDER])
         ax.set_xlim(0.4, len(DYNAMIC_ORDER) + 0.6)
         ax.set_yscale("log")
-        ax.set_title(title, fontsize=20, pad=8)
-        if ax is axes[0]:
-            ax.set_ylabel(unit, fontsize=18)
-        ax.tick_params(axis="x", labelsize=14, pad=2)
-        ax.tick_params(axis="y", labelsize=14)
+        ax.set_title(title, fontsize=FONT_SIZE_TITLE, pad=8)
+        ax.set_ylabel(unit)
+        ax.tick_params(axis="x", pad=2)
         for label in ax.get_xticklabels():
             label.set_rotation(35)
             label.set_ha("right")
@@ -309,7 +299,7 @@ def panel_b() -> plt.Figure:
         loc="upper center",
         ncol=3,
         frameon=False,
-        fontsize=14,
+        fontsize=FONT_SIZE_LABEL,
         bbox_to_anchor=(0.5, 1.02),
     )
     fig.subplots_adjust(left=0.05, right=0.995, top=0.84, bottom=0.24, wspace=0.34)
@@ -337,7 +327,7 @@ def panel_c() -> plt.Figure:
     sim_id_for = {(dyn, vcv): sid for sid, vcv, dyn in SIM_MAP}
 
     for col, dyn in enumerate(PANEL_C_DYNAMICS):
-        axes[0, col].set_title(PANEL_C_LABELS[dyn], fontsize=20, pad=8)
+        axes[0, col].set_title(PANEL_C_LABELS[dyn], fontsize=FONT_SIZE_TITLE, pad=8)
 
     # First pass: load all snapshots so we can compute one uniform crop size
     snapshots: list[tuple[int, int, np.ndarray, np.ndarray, pd.Series]] = []
@@ -366,7 +356,7 @@ def panel_c() -> plt.Figure:
         run_id = int(rep["run_id"])
         ax.set_xlabel(
             f"run {run_id:04d}\\narea = {rep['lin_area_vox'] * AREA_SCALE:.0f} µm²",
-            fontsize=14,
+            fontsize=FONT_SIZE_LABEL,
             labelpad=2,
         )
         ax.xaxis.set_label_coords(0.5, -0.03)
@@ -374,16 +364,16 @@ def panel_c() -> plt.Figure:
     for row_idx, vcv in enumerate([1, 0]):
         bbox = axes[row_idx, 0].get_position()
         fig.text(
-            bbox.x0 - 0.005,
+            bbox.x0 - 0.02,
             (bbox.y0 + bbox.y1) / 2,
             f"VCV={vcv}",
             ha="right",
             va="center",
-            fontsize=20,
+            fontsize=FONT_SIZE_TITLE,
             fontweight="bold",
         )
 
-    fig.subplots_adjust(left=0.10, right=0.995, top=0.93, bottom=0.05, wspace=0.04, hspace=0.30)
+    fig.subplots_adjust(left=0.14, right=0.995, top=0.93, bottom=0.05, wspace=0.04, hspace=0.30)
     return fig
 
 
@@ -428,7 +418,7 @@ def panel_d(best_vcv0: str | None = None, best_vcv1: str | None = None) -> plt.F
     print(f"best VCV=0: {best_vcv0}    best VCV=1: {best_vcv1}")
 
     fig, axes = plt.subplots(1, len(METRIC_SPECS), figsize=(18.2, 5.4))
-    fill_map = {"exp": "#d9d9d9", "vcv0": "#a8a8a8", "vcv1": "#5f5f5f"}
+    fill_map = {"exp": EXP_FILL_COLOR, "vcv0": "#a8a8a8", "vcv1": "#5f5f5f"}
 
     for ax, (key, title, unit, is_area) in zip(axes, METRIC_SPECS):
         groups = [
@@ -460,12 +450,11 @@ def panel_d(best_vcv0: str | None = None, best_vcv1: str | None = None) -> plt.F
         )
         for patch, (_, _, c) in zip(bp["boxes"], groups):
             patch.set_facecolor(c)
+        bp["medians"][0].set(color=EXP_MEDIAN_COLOR, linewidth=1.8, linestyle="--")
         ax.set_xticks(positions, [g[0] for g in groups])
-        ax.set_title(title, fontsize=20, pad=8)
-        if ax is axes[0]:
-            ax.set_ylabel(unit, fontsize=18)
-        ax.tick_params(axis="x", labelsize=13, pad=2)
-        ax.tick_params(axis="y", labelsize=15)
+        ax.set_title(title, fontsize=FONT_SIZE_TITLE, pad=8)
+        ax.set_ylabel(unit)
+        ax.tick_params(axis="x", pad=2)
         for label in ax.get_xticklabels():
             label.set_ha("center")
         style_publication_axis(ax)

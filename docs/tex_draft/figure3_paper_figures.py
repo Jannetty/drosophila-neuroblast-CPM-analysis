@@ -37,7 +37,7 @@ EXP_ANALYSIS_DIR = REPO_ROOT / "data" / "exp" / "processed" / "analysis"
 
 import sys as _sys
 _sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _style import RCPARAMS as _RCPARAMS, FONT_SIZE_TITLE, FONT_SIZE_LABEL
+from _style import RCPARAMS as _RCPARAMS, FONT_SIZE_TITLE, FONT_SIZE_LABEL, EXP_FILL_COLOR, EXP_MEDIAN_COLOR
 plt.rcParams.update(_RCPARAMS)
 
 
@@ -176,6 +176,9 @@ def make_boxplot_panel(
     )
     for patch, (label, _) in zip(bp["boxes"], groups):
         patch.set_facecolor(fill_map[label])
+    for median, (label, _) in zip(bp["medians"], groups):
+        if fill_map.get(label) == EXP_FILL_COLOR:
+            median.set(color=EXP_MEDIAN_COLOR, linewidth=1.8, linestyle="--")
     ax.set_xticks(positions, [label for label, _ in groups])
     ax.set_title(title, pad=10)
     if ylabel is not None:
@@ -252,9 +255,9 @@ def endpoint_metrics_panel(
         ("n_dpn", "NB count", "cells", False),
     ]
     fill_map = {
-        "WT Exp": "#d9d9d9",
+        "WT Exp": EXP_FILL_COLOR,
         "WT Sim": "#ffffff",
-        "mud Exp": "#a8a8a8",
+        "mud Exp": EXP_FILL_COLOR,
         "mud Sim": "#5f5f5f",
     }
 
@@ -285,8 +288,8 @@ def regulatory_hypothesis_panel(
     exp_mud: pd.DataFrame,
 ) -> plt.Figure:
     fill_map = {
-        "WT Exp": "#d9d9d9",
-        "mud Exp": "#a8a8a8",
+        "WT Exp": EXP_FILL_COLOR,
+        "mud Exp": EXP_FILL_COLOR,
     }
     fig, axes = plt.subplots(1, 2, figsize=(7.0, 5.2))
     specs = [

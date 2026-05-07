@@ -1,7 +1,14 @@
-"""Build figure5_paper_figures.ipynb from the cell list below.
+"""Build figure5_paper_figures.ipynb from the adhesion decoupling analysis.
 
-Run once: `python _figure5_build_notebook.py`.
-This file is a scaffolding tool, not part of the figure pipeline.
+Panels:
+  A – adhesion main effect: spatial metrics at relrot=off vs J=50/40/20
+  B – adhesion main effect: example lineages (2 reg.dyn. rows x 3 J cols)
+  C – relative rotation sweep: spatial metrics vs relrot mode, by J level
+  D – relative rotation sweep: example lineages (6x4 grid: 2 reg.dyn. x 3J x 4relrot)
+  E – NB connectivity heatmap (adhesion x relrot, diverging colormap)
+  F – connectivity example lineages (supplement candidate, 6x4 grid)
+
+Data: data/sim/processed_decoupling_adhesion/
 """
 from __future__ import annotations
 import json
@@ -12,16 +19,18 @@ NB_PATH = HERE / "figure5_paper_figures.ipynb"
 
 CELLS = [
     ("md", """\
-# Figure 5 — Preferential NB-NB adhesion is not required for mutant NB clustering
+# Figure 5 — Adhesion decoupling analysis
 
-Compares simulated *mud* mutant lineages with vs without preferential NB-NB adhesion, restricted to the two regulatory dynamics that came closest to the experimental range under VCV=1 (volume-ABM and volume-PDE).
+Examines how NB-NB adhesion strength (J=50/40/20) and relative-rotation mode
+(off / mu=0 / mu=45 / mu=90) interact to shape NB spatial clustering.
+mudmut VCV=1, VOL-ABM and VOL-PDE, 50 runs per condition.
 
-- **A** — paired representative lineages (with vs without adhesion) for each regulatory dynamic
-- **B** — paired distributions of normalized heterotypic contact fraction (`norm_het_frac`)
-- **C** — paired distributions of NB exposure fraction (`exposed_frac`)
-- **D** — paired distributions of homotypic NB contact fraction (computed here)
-
-Conditions: `mudmut_divMean0Stdev26_rotMean0Stdev30` (with adhesion) vs `_noadhesion`. sim43 = VOL-ABM, sim45 = VOL-PDE; VCV=1 only.
+- **A** — adhesion main effect: spatial metrics at baseline (relrot=off)
+- **B** — adhesion main effect: example lineages (VOL-ABM and VOL-PDE)
+- **C** — relative rotation sweep: metrics vs relrot mode, colored by adhesion
+- **D** — relative rotation sweep: example lineages (3 J × 4 relrot, both dynamics)
+- **E** — NB connectivity heatmap (fraction of runs with all NBs connected)
+- **F** — connectivity example lineages (supplement candidate)
 """),
 
     ("code", """\
@@ -32,9 +41,11 @@ from pathlib import Path
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
 from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 
 
 def find_repo_root(start: Path | None = None) -> Path:
@@ -54,73 +65,84 @@ from npa.sim_viz import load_raw_snapshot_full, render_raw
 FIG_DIR = REPO_ROOT / "docs" / "tex_draft" / "figures"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
-mpl.rcParams.update({
-    "font.family": "sans-serif",
-    "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
-    "font.size": 16,
-    "axes.titlesize": 20,
-    "axes.labelsize": 18,
-    "xtick.labelsize": 16,
-    "ytick.labelsize": 16,
-    "axes.linewidth": 0.8,
-    "pdf.fonttype": 42,
-    "ps.fonttype": 42,
-    "savefig.dpi": 300,
-    "svg.fonttype": "none",
-})
+_style_dir = str(REPO_ROOT / "docs" / "tex_draft")
+if _style_dir not in sys.path:
+    sys.path.insert(0, _style_dir)
+from _style import RCPARAMS as _RCPARAMS, FONT_SIZE_TITLE, FONT_SIZE_LABEL
+mpl.rcParams.update(_RCPARAMS)
 
 print(f"Repo root: {REPO_ROOT}")
 print(f"Output dir: {FIG_DIR}")
 """),
 
     ("code", """\
-DS_UM_PER_VOX = 0.3
-AREA_SCALE = DS_UM_PER_VOX ** 2
+PROC_DIR = REPO_ROOT / "data" / "sim" / "processed_decoupling_adhesion"
 
-MUD_BASE = "mudmut_divMean0Stdev26_rotMean0Stdev30"
-MUD_NOADH = "mudmut_divMean0Stdev26_rotMean0Stdev30_noadhesion"
+run_idx = pd.read_csv(PROC_DIR / "sim_run_index.csv", dtype=str)
+run_idx["npz_row"] = run_idx["npz_row"].astype(int)
 
-# (sim_id, regulatory_dynamic key, display label)
-SIM_MAP: list[tuple[str, str, str]] = [
-    ("sim43", "VOL-ABM", "volume (ABM)"),
-    ("sim45", "VOL-PDE", "volume (PDE)"),
-]
-VCV_MODE = 1
+exp_df  = pd.read_csv(PROC_DIR / "nb_exposure_metrics.csv")
+conn_df = pd.read_csv(PROC_DIR / "nb_connectivity_metrics.csv")
 
-ADH_FILL = {"with": "#5f5f5f", "without": "#d9d9d9"}
-ADH_LABEL = {"with": "with NB–NB adhesion", "without": "without NB–NB adhesion"}
+_BOOL_MAP = {"True": True, "False": False, True: True, False: False}
+for df in [exp_df, conn_df]:
+    df["adhesion"]  = df["adhesion"].astype(int)
+    df["div_stdev"] = df["div_stdev"].astype(int)
+    df["relrot"]    = df["relrot"].map(_BOOL_MAP)
+    df["run_id"]    = df["run_id"].astype(str)
+conn_df["nb_connected"] = conn_df["nb_connected"].map(_BOOL_MAP)
 
-SIM_METRICS_CSV = REPO_ROOT / "data" / "sim" / "processed_div26" / "sim_metrics_last.csv"
-SIM_RUN_INDEX_CSV = REPO_ROOT / "data" / "sim" / "processed_div26" / "sim_run_index.csv"
-HET_METRICS_CSV = REPO_ROOT / "data" / "sim" / "processed_adhesion" / "het_contact_metrics.csv"
-EXP_METRICS_CSV = REPO_ROOT / "data" / "sim" / "processed_adhesion" / "nb_exposure_metrics.csv"
+
+def _relrot_label(row) -> str:
+    if not row["relrot"]:
+        return "off"
+    m = row["relrot_mean"]
+    return f"mu={int(m)}" if not pd.isna(m) else "mu=?"
+
+
+for df in [exp_df, conn_df]:
+    df["relrot_label"] = df.apply(_relrot_label, axis=1)
+
+all_df = (
+    exp_df[["condition", "sim_id", "run_id", "adhesion", "div_stdev",
+            "relrot", "relrot_mean", "relrot_label",
+            "critical_volume_mode", "regulatory_dynamic", "exposed_frac"]]
+    .merge(conn_df[["condition", "sim_id", "run_id", "nb_connected"]],
+           on=["condition", "sim_id", "run_id"], how="left")
+)
+
+print("Combined df shape:", all_df.shape)
+print("Adhesion levels:", sorted(all_df["adhesion"].unique()))
+print("Relrot labels:", sorted(all_df["relrot_label"].unique()))
+print("Regulatory dynamics:", sorted(all_df["regulatory_dynamic"].unique()))
 """),
 
     ("code", """\
-sim_metrics_df = pd.read_csv(SIM_METRICS_CSV)
-run_index_df = pd.read_csv(SIM_RUN_INDEX_CSV)
-het_df = pd.read_csv(HET_METRICS_CSV)
-exp_df = pd.read_csv(EXP_METRICS_CSV)
+# Okabe-Ito colorblind-friendly palette (no red, no blue-red confusion)
+ADH_ORDER   = [50, 40, 20]
+ADH_COLORS  = {50: "#E69F00", 40: "#56B4E9", 20: "#009E73"}
+ADH_LABELS  = {50: "J=50\\n(no diff.)", 40: "J=40\\n(baseline)", 20: "J=20\\n(strong)"}
+ADH_LEGEND  = {50: "J=50 (no diff.)", 40: "J=40 (baseline)", 20: "J=20 (strong)"}
+RELROT_ORDER  = ["off", "mu=0", "mu=45", "mu=90"]
+RELROT_LABELS = {"off": "off", "mu=0": "mu=0°", "mu=45": "mu=45°", "mu=90": "mu=90°"}
+REG_DYN_ORDER = ["VOL-ABM", "VOL-PDE"]
+SIM_ID_MAP    = {"VOL-ABM": "vcv1_vol_abm", "VOL-PDE": "vcv1_vol_pde"}
+
+SPATIAL_METRICS = ["exposed_frac"]
+METRIC_LABELS = {
+    "exposed_frac": "NB exposed frac",
+    "nb_connected": "Fraction connected",
+}
 
 
-def _filter_scope(df: pd.DataFrame) -> pd.DataFrame:
-    out = df[
-        (df["condition"].isin([MUD_BASE, MUD_NOADH]))
-        & (df["sim_id"].isin([sid for sid, _, _ in SIM_MAP]))
-        & (df["critical_volume_mode"] == VCV_MODE)
-    ].copy()
-    out["adhesion_state"] = out["condition"].map(lambda c: "without" if "noadhesion" in c else "with")
-    return out
+def _cond_name(adh: int, relrot_label: str) -> str:
+    base = f"mudmut_adh{adh}_divMean0Stdev50"
+    if relrot_label == "off":
+        return base
+    mu = int(relrot_label.split("=")[1])
+    return f"{base}_relrotMean{mu}"
 
 
-sim_metrics = _filter_scope(sim_metrics_df)
-het = _filter_scope(het_df)
-exp = _filter_scope(exp_df)
-
-print(f"sim_metrics rows: {len(sim_metrics)}    het rows: {len(het)}    exp rows: {len(exp)}")
-"""),
-
-    ("code", """\
 def content_bbox(arr: np.ndarray, pad: int = 6) -> tuple[int, int, int, int]:
     occ = arr.any(axis=-1) if arr.ndim == 3 else arr > 0
     ys, xs = np.where(occ)
@@ -134,10 +156,10 @@ def content_bbox(arr: np.ndarray, pad: int = 6) -> tuple[int, int, int, int]:
     return y0, x0, y1, x1
 
 
-def uniform_crop_size(geo_arrays: list[np.ndarray], pad: int = 6) -> int:
+def uniform_crop_size(geo_list: list[np.ndarray], pad: int = 6) -> int:
     max_dim = 0
-    for arr in geo_arrays:
-        y0, x0, y1, x1 = content_bbox(arr, pad=pad)
+    for geo in geo_list:
+        y0, x0, y1, x1 = content_bbox(geo, pad=pad)
         max_dim = max(max_dim, y1 - y0, x1 - x0)
     return max_dim
 
@@ -158,58 +180,30 @@ def crop_centered(arr: np.ndarray, target_size: int) -> np.ndarray:
     return arr[y0:y0 + target_size, x0:x0 + target_size]
 
 
-def pick_percentile_run(df: pd.DataFrame, metric: str, percentile: float) -> pd.Series:
-    target = df[metric].quantile(percentile)
-    candidates = df.assign(abs_delta=(df[metric] - target).abs()).sort_values(
-        ["abs_delta", metric, "run_id"], kind="stable"
+def _load_median_run(cond: str, sim_id: str, metric_df: pd.DataFrame,
+                      metric_col: str) -> tuple[np.ndarray | None, np.ndarray | None, float]:
+    # Returns (geo_raw, lmap, median_value) for the run closest to metric median.
+    sub = metric_df[(metric_df["condition"] == cond) & (metric_df["sim_id"] == sim_id)]
+    if sub.empty:
+        return None, None, np.nan
+    med = float(sub[metric_col].median())
+    best_run = int(sub.loc[(sub[metric_col] - med).abs().idxmin(), "run_id"])
+    run_str = str(best_run).zfill(4)
+    match = run_idx[
+        (run_idx["condition"] == cond) &
+        (run_idx["sim_id"] == sim_id) &
+        (run_idx["run_id"] == run_str)
+    ]
+    if match.empty:
+        return None, None, np.nan
+    r = match.iloc[0]
+    geo_raw, lmap = load_raw_snapshot_full(
+        REPO_ROOT / r["cells_path"], REPO_ROOT / r["locs_path"]
     )
-    return candidates.iloc[0]
+    return geo_raw, lmap, med
 
 
-def pick_mean_run(df: pd.DataFrame, metric: str) -> pd.Series:
-    target = df[metric].mean()
-    candidates = df.assign(abs_delta=(df[metric] - target).abs()).sort_values(
-        ["abs_delta", metric, "run_id"], kind="stable"
-    )
-    return candidates.iloc[0]
-
-
-def load_run_snapshot(condition: str, sim_id: str, run_id: int) -> tuple[np.ndarray, np.ndarray]:
-    row = run_index_df.loc[
-        (run_index_df["condition"] == condition)
-        & (run_index_df["sim_id"] == sim_id)
-        & (run_index_df["run_id"].astype(int) == int(run_id))
-    ].iloc[0]
-    cells_path = REPO_ROOT / row["cells_path"]
-    locs_path = REPO_ROOT / row["locs_path"]
-    return load_raw_snapshot_full(cells_path, locs_path)
-
-
-def homotypic_nb_contact_fraction(geo_raw: np.ndarray, label_map: np.ndarray) -> float:
-    \"\"\"Of all inter-cell contacts that involve at least one NB, what fraction are NB-NB?
-
-    Uses label_map to mask out intra-cell pixel adjacencies so a single large NB
-    surrounded by non-NBs doesn't trivially score as homotypic.
-    \"\"\"
-    nb = geo_raw[..., 0] > 0
-    nonnb = (geo_raw[..., 1] > 0) | (geo_raw[..., 2] > 0)
-
-    diff_h = label_map[:, :-1] != label_map[:, 1:]
-    diff_v = label_map[:-1, :] != label_map[1:, :]
-
-    nb_nb_h = diff_h & nb[:, :-1] & nb[:, 1:]
-    nb_nb_v = diff_v & nb[:-1, :] & nb[1:, :]
-
-    nb_other_h = diff_h & ((nb[:, :-1] & nonnb[:, 1:]) | (nonnb[:, :-1] & nb[:, 1:]))
-    nb_other_v = diff_v & ((nb[:-1, :] & nonnb[1:, :]) | (nonnb[:-1, :] & nb[1:, :]))
-
-    n_nb_nb = int(nb_nb_h.sum() + nb_nb_v.sum())
-    n_nb_other = int(nb_other_h.sum() + nb_other_v.sum())
-    n_total = n_nb_nb + n_nb_other
-    return float(n_nb_nb / n_total) if n_total > 0 else np.nan
-
-
-def style_publication_axis(ax: plt.Axes) -> None:
+def style_axis(ax: plt.Axes) -> None:
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.grid(axis="y", color="#d0d0d0", linewidth=0.6, alpha=0.5)
@@ -217,185 +211,414 @@ def style_publication_axis(ax: plt.Axes) -> None:
 """),
 
     ("md", """\
-## Compute homotypic NB contact fraction for all paired runs
+## Panel A — Adhesion main effect (metrics)
 
-Run once; the result populates a long-form dataframe used by panel D. Loads ~200 raw geo tensors so this cell takes a few seconds.
-"""),
-
-    ("code", """\
-homo_records = []
-for sid, dyn_key, dyn_label in SIM_MAP:
-    for cond, state in [(MUD_BASE, "with"), (MUD_NOADH, "without")]:
-        subset = run_index_df[
-            (run_index_df["condition"] == cond)
-            & (run_index_df["sim_id"] == sid)
-        ]
-        for _, row in subset.iterrows():
-            geo_raw, label_map = load_raw_snapshot_full(REPO_ROOT / row["cells_path"], REPO_ROOT / row["locs_path"])
-            f = homotypic_nb_contact_fraction(geo_raw, label_map)
-            homo_records.append({
-                "sim_id": sid,
-                "regulatory_dynamic": dyn_key,
-                "adhesion_state": state,
-                "run_id": int(row["run_id"]),
-                "homotypic_nb_frac": f,
-            })
-
-homo_df = pd.DataFrame(homo_records)
-print(f"computed homotypic_nb_frac for {len(homo_df)} runs")
-homo_df.head()
-"""),
-
-    ("md", """\
-## Panel A — paired representative lineages
-
-50th-percentile-by-lineage-area runs from each (regulatory dynamic × adhesion) combination. Rows = regulatory dynamic; columns = adhesion state. Universal crop dimension applied across all four lineages.
+Spatial metrics at baseline (relrot=off) for J=50/40/20.
+Rows = metric (NB exposed frac, Fraction connected); columns = regulatory dynamic.
 """),
 
     ("code", """\
 def panel_a() -> plt.Figure:
-    fig, axes = plt.subplots(2, 2, figsize=(7.0, 7.6))
+    baseline = all_df[all_df["relrot_label"] == "off"]
+    plot_metrics = SPATIAL_METRICS + ["nb_connected"]
 
-    snapshots = []
-    for row_idx, (sid, dyn_key, dyn_label) in enumerate(SIM_MAP):
-        for col_idx, (cond, state) in enumerate([(MUD_BASE, "with"), (MUD_NOADH, "without")]):
-            homo_subset = homo_df[
-                (homo_df["sim_id"] == sid)
-                & (homo_df["adhesion_state"] == state)
-            ]
-            rep_homo = pick_mean_run(homo_subset, "homotypic_nb_frac")
-            run_id = int(rep_homo["run_id"])
-            area_row = sim_metrics[
-                (sim_metrics["condition"] == cond)
-                & (sim_metrics["sim_id"] == sid)
-                & (sim_metrics["run_id"] == run_id)
-            ].iloc[0]
-            rep = pd.Series({
-                "run_id": run_id,
-                "lin_area_vox": area_row["lin_area_vox"],
-                "homotypic_nb_frac": rep_homo["homotypic_nb_frac"],
-            })
-            geo_raw, label_map = load_run_snapshot(cond, sid, run_id)
-            snapshots.append((row_idx, col_idx, dyn_label, state, geo_raw, label_map, rep))
+    fig, axes = plt.subplots(
+        len(plot_metrics), len(REG_DYN_ORDER),
+        figsize=(7.0 * len(REG_DYN_ORDER), 5.0 * len(plot_metrics)),
+        squeeze=False,
+    )
 
-    target_size = uniform_crop_size([s[4] for s in snapshots], pad=6)
-    print(f"panel A uniform crop: {target_size}x{target_size} voxels "
-          f"({target_size * DS_UM_PER_VOX:.1f}x{target_size * DS_UM_PER_VOX:.1f} µm)")
+    for ri, metric in enumerate(plot_metrics):
+        for ci, reg_dyn in enumerate(REG_DYN_ORDER):
+            ax = axes[ri, ci]
+            sub = baseline[baseline["regulatory_dynamic"] == reg_dyn]
+            if metric == "nb_connected":
+                fracs = [float(sub[sub["adhesion"] == adh]["nb_connected"].mean())
+                         for adh in ADH_ORDER]
+                ax.bar(range(len(ADH_ORDER)), fracs,
+                       color=[ADH_COLORS[a] for a in ADH_ORDER],
+                       edgecolor="black", linewidth=0.8, zorder=3)
+                ax.set_ylim(0, 1)
+                ax.axhline(0.5, color="#888888", linestyle="--", linewidth=1, zorder=2)
+            else:
+                for ti, adh in enumerate(ADH_ORDER):
+                    runs = sub[sub["adhesion"] == adh][metric].dropna()
+                    if runs.empty:
+                        continue
+                    ax.boxplot(
+                        [runs], positions=[ti], widths=0.5,
+                        patch_artist=True, showfliers=False,
+                        medianprops={"color": "black", "linewidth": 1.4},
+                        boxprops={"facecolor": ADH_COLORS[adh], "edgecolor": "black", "linewidth": 1.0},
+                        whiskerprops={"color": "black", "linewidth": 0.9},
+                        capprops={"color": "black", "linewidth": 0.9},
+                        manage_ticks=False, zorder=3,
+                    )
+            ax.set_xticks(range(len(ADH_ORDER)))
+            ax.set_xticklabels([ADH_LABELS[a] for a in ADH_ORDER])
+            if ri == 0:
+                ax.set_title(reg_dyn, fontsize=FONT_SIZE_TITLE, pad=8, fontweight="bold")
+            if ci == 0:
+                ax.set_ylabel(METRIC_LABELS[metric], fontsize=FONT_SIZE_LABEL)
+            style_axis(ax)
 
-    for col_idx, state in enumerate(["with", "without"]):
-        axes[0, col_idx].set_title(ADH_LABEL[state], fontsize=18, pad=8)
-
-    for row_idx, col_idx, dyn_label, state, geo_raw, label_map, rep in snapshots:
-        ax = axes[row_idx, col_idx]
-        geo_crop = crop_centered(geo_raw, target_size)
-        label_crop = crop_centered(label_map, target_size)
-        render_raw(geo_crop, ax=ax, label_map=label_crop, title="")
-        ax.set_xticks([])
-        ax.set_yticks([])
-        for spine in ax.spines.values():
-            spine.set_visible(False)
-        ax.set_xlabel(
-            f"run {int(rep['run_id']):04d}\\narea = {rep['lin_area_vox'] * AREA_SCALE:.0f} µm²",
-            fontsize=14,
-            labelpad=2,
-        )
-        ax.xaxis.set_label_coords(0.5, -0.03)
-
-    for row_idx, (_, _, dyn_label) in enumerate(SIM_MAP):
-        bbox = axes[row_idx, 0].get_position()
-        fig.text(
-            bbox.x0 - 0.005,
-            (bbox.y0 + bbox.y1) / 2,
-            dyn_label,
-            ha="right",
-            va="center",
-            fontsize=18,
-            fontweight="bold",
-        )
-
-    fig.subplots_adjust(left=0.18, right=0.99, top=0.92, bottom=0.06, wspace=0.05, hspace=0.30)
+    handles = [Patch(facecolor=ADH_COLORS[a], edgecolor="black", label=ADH_LEGEND[a])
+               for a in ADH_ORDER]
+    fig.tight_layout(rect=[0, 0.10, 1, 1])
+    fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False,
+               fontsize=FONT_SIZE_LABEL, bbox_to_anchor=(0.5, 0.01))
     return fig
 
 
 fig_a = panel_a()
-fig_a.savefig(FIG_DIR / "figure5_paired_lineages_panel.png", bbox_inches="tight", facecolor="white")
-fig_a.savefig(FIG_DIR / "figure5_paired_lineages_panel.svg", bbox_inches="tight", facecolor="white")
-fig_a.savefig(FIG_DIR / "figure5_paired_lineages_panel.pdf", bbox_inches="tight", facecolor="white")
+fig_a.savefig(FIG_DIR / "figure5_adhesion_main_effect.png", bbox_inches="tight", facecolor="white")
+fig_a.savefig(FIG_DIR / "figure5_adhesion_main_effect.pdf", bbox_inches="tight", facecolor="white")
+print("saved figure5_adhesion_main_effect")
 plt.show()
 """),
 
     ("md", """\
-## Panels B / C / D — paired metrics
+## Panel B — Adhesion main effect: example lineages
 
-`make_paired_panel` draws two side-by-side boxes per regulatory dynamic (with adhesion vs without), and prints the mean absolute paired delta on each group. Reuse for `norm_het_frac`, `exposed_frac`, and `homotypic_nb_frac`.
+Rows = regulatory dynamic (VOL-ABM, VOL-PDE); columns = adhesion J.
+Run selected at median `exposed_frac`. Uniform crop across all images.
 """),
 
     ("code", """\
-def make_paired_panel(ax: plt.Axes, df: pd.DataFrame, value_col: str, title: str, ylabel: str | None = None) -> None:
-    box_width = 0.36
-    centers = np.arange(1, len(SIM_MAP) + 1, dtype=float)
+def panel_b() -> plt.Figure:
+    # First pass: load all runs
+    snapshots: dict[tuple, tuple] = {}
+    for reg_dyn in REG_DYN_ORDER:
+        sim_id = SIM_ID_MAP[reg_dyn]
+        for adh in ADH_ORDER:
+            cond = _cond_name(adh, "off")
+            geo, lmap, med = _load_median_run(cond, sim_id, exp_df, "exposed_frac")
+            snapshots[(reg_dyn, adh)] = (geo, lmap, med)
 
-    for state, offset in [("with", -box_width / 2 - 0.02), ("without", +box_width / 2 + 0.02)]:
-        values = []
-        for sid, _, _ in SIM_MAP:
-            subset = df[(df["sim_id"] == sid) & (df["adhesion_state"] == state)]
-            values.append(subset[value_col].astype(float).to_numpy())
-        positions = centers + offset
-        ax.boxplot(
-            values,
-            positions=positions,
-            widths=box_width,
-            patch_artist=True,
-            showfliers=False,
-            medianprops={"color": "black", "linewidth": 1.4},
-            boxprops={"facecolor": ADH_FILL[state], "edgecolor": "black", "linewidth": 1.0},
-            whiskerprops={"color": "black", "linewidth": 0.9},
-            capprops={"color": "black", "linewidth": 0.9},
-            manage_ticks=False,
-            zorder=3,
-        )
+    all_geos = [v[0] for v in snapshots.values() if v[0] is not None]
+    target_size = uniform_crop_size(all_geos, pad=6)
+    print(f"panel B uniform crop: {target_size}px")
 
-    ax.set_xticks(centers, [dyn for _, _, dyn in SIM_MAP])
-    ax.set_title(title, fontsize=20, pad=8)
-    if ylabel is not None:
-        ax.set_ylabel(ylabel, fontsize=18)
-    ax.tick_params(axis="x", labelsize=14, pad=2)
-    ax.tick_params(axis="y", labelsize=14)
-    style_publication_axis(ax)
-
-
-def panels_bcd() -> plt.Figure:
-    fig, axes = plt.subplots(1, 3, figsize=(15.0, 5.4))
-    make_paired_panel(axes[0], het, "norm_het_frac",
-                      title="Normalized heterotypic\\ncontact fraction",
-                      ylabel="norm_het_frac")
-    make_paired_panel(axes[1], exp, "exposed_frac",
-                      title="NB perimeter fraction\\nexposed",
-                      ylabel="exposed_frac")
-    make_paired_panel(axes[2], homo_df, "homotypic_nb_frac",
-                      title="Homotypic NB\\ncontact fraction",
-                      ylabel="homotypic_nb_frac")
-
-    handles = [
-        Patch(facecolor=ADH_FILL["with"], edgecolor="black", label=ADH_LABEL["with"]),
-        Patch(facecolor=ADH_FILL["without"], edgecolor="black", label=ADH_LABEL["without"]),
-    ]
-    fig.legend(
-        handles=handles,
-        loc="upper center",
-        ncol=2,
-        frameon=False,
-        fontsize=14,
-        bbox_to_anchor=(0.5, 1.02),
+    fig, axes = plt.subplots(
+        len(REG_DYN_ORDER), len(ADH_ORDER),
+        figsize=(4.0 * len(ADH_ORDER), 4.0 * len(REG_DYN_ORDER)),
+        squeeze=False,
     )
-    fig.subplots_adjust(left=0.06, right=0.99, top=0.82, bottom=0.12, wspace=0.42)
+
+    for ri, reg_dyn in enumerate(REG_DYN_ORDER):
+        for ci, adh in enumerate(ADH_ORDER):
+            ax = axes[ri, ci]
+            geo, lmap, med = snapshots[(reg_dyn, adh)]
+            if geo is None:
+                ax.text(0.5, 0.5, "no data", ha="center", va="center",
+                        transform=ax.transAxes)
+                ax.axis("off")
+                continue
+            render_raw(crop_centered(geo, target_size),
+                       label_map=crop_centered(lmap, target_size), ax=ax, title="")
+            ax.axis("off")
+            if ri == 0:
+                ax.set_title(f"J={adh}", fontsize=FONT_SIZE_TITLE, pad=8, fontweight="bold")
+            if not np.isnan(med):
+                ax.text(0.97, 0.03, f"exp={med:.3f}", transform=ax.transAxes,
+                        fontsize=FONT_SIZE_LABEL, va="bottom", ha="right", color="white",
+                        bbox=dict(boxstyle="round,pad=0.2", facecolor="#333333", alpha=0.65))
+
+        bbox = axes[ri, 0].get_position()
+        fig.text(bbox.x0 - 0.02, (bbox.y0 + bbox.y1) / 2, reg_dyn,
+                 ha="right", va="center", fontsize=FONT_SIZE_TITLE, fontweight="bold")
+
+    fig.suptitle("Adhesion main effect — example lineages (relrot=off, median exposed_frac)",
+                  fontsize=FONT_SIZE_TITLE)
+    fig.subplots_adjust(left=0.14, right=0.99, top=0.92, bottom=0.02, wspace=0.04, hspace=0.06)
     return fig
 
 
-fig_bcd = panels_bcd()
-fig_bcd.savefig(FIG_DIR / "figure5_paired_metrics_panel.png", bbox_inches="tight", facecolor="white")
-fig_bcd.savefig(FIG_DIR / "figure5_paired_metrics_panel.svg", bbox_inches="tight", facecolor="white")
-fig_bcd.savefig(FIG_DIR / "figure5_paired_metrics_panel.pdf", bbox_inches="tight", facecolor="white")
+fig_b = panel_b()
+fig_b.savefig(FIG_DIR / "figure5_adhesion_main_effect_lineages.png", bbox_inches="tight", facecolor="white")
+fig_b.savefig(FIG_DIR / "figure5_adhesion_main_effect_lineages.pdf", bbox_inches="tight", facecolor="white")
+print("saved figure5_adhesion_main_effect_lineages")
+plt.show()
+"""),
+
+    ("md", """\
+## Panel C — Relative rotation sweep (metrics)
+
+Spatial metrics vs relrot mode (off / mu=0 / mu=45 / mu=90).
+Lines colored by adhesion strength. Rows = metric (NB exposed frac, Fraction connected); columns = regulatory dynamic.
+Points = median; error bars = IQR/2. `nb_connected` = fraction of runs connected.
+"""),
+
+    ("code", """\
+def panel_c() -> plt.Figure:
+    plot_metrics = SPATIAL_METRICS + ["nb_connected"]
+    x_pos = list(range(len(RELROT_ORDER)))
+    x_labels = [RELROT_LABELS[r] for r in RELROT_ORDER]
+
+    fig, axes = plt.subplots(
+        len(plot_metrics), len(REG_DYN_ORDER),
+        figsize=(7.0 * len(REG_DYN_ORDER), 5.0 * len(plot_metrics)),
+        squeeze=False,
+    )
+
+    for ri, metric in enumerate(plot_metrics):
+        for ci, reg_dyn in enumerate(REG_DYN_ORDER):
+            ax = axes[ri, ci]
+            sub = all_df[all_df["regulatory_dynamic"] == reg_dyn]
+            for adh in ADH_ORDER:
+                ys, errs = [], []
+                for rl in RELROT_ORDER:
+                    vals = sub[(sub["adhesion"] == adh) & (sub["relrot_label"] == rl)][metric].dropna()
+                    if vals.empty:
+                        ys.append(np.nan); errs.append(0.0)
+                    elif metric == "nb_connected":
+                        ys.append(float(vals.mean())); errs.append(0.0)
+                    else:
+                        ys.append(float(vals.median()))
+                        errs.append((float(vals.quantile(0.75)) - float(vals.quantile(0.25))) / 2)
+                kw = dict(color=ADH_COLORS[adh], marker="o", linewidth=1.8,
+                          markersize=6, label=ADH_LEGEND[adh])
+                if metric == "nb_connected":
+                    ax.plot(x_pos, ys, **kw)
+                else:
+                    ax.errorbar(x_pos, ys, yerr=errs, capsize=3, **kw)
+
+            if metric == "nb_connected":
+                ax.set_ylim(0, 1)
+                ax.axhline(0.5, color="#888888", linestyle="--", linewidth=1, zorder=1)
+
+            ax.set_xticks(x_pos)
+            ax.set_xticklabels(x_labels)
+            if ri == 0:
+                ax.set_title(reg_dyn, fontsize=FONT_SIZE_TITLE, pad=8, fontweight="bold")
+            if ci == 0:
+                ax.set_ylabel(METRIC_LABELS[metric], fontsize=FONT_SIZE_LABEL)
+            ax.grid(axis="y", color="#d0d0d0", linewidth=0.6, alpha=0.5)
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+
+    handles = [Line2D([0], [0], color=ADH_COLORS[a], marker="o",
+                       linewidth=1.8, markersize=6, label=ADH_LEGEND[a])
+               for a in ADH_ORDER]
+    fig.tight_layout(rect=[0, 0.10, 1, 1])
+    fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False,
+               fontsize=FONT_SIZE_LABEL, bbox_to_anchor=(0.5, 0.01))
+    return fig
+
+
+fig_c = panel_c()
+fig_c.savefig(FIG_DIR / "figure5_rotation_sweep.png", bbox_inches="tight", facecolor="white")
+fig_c.savefig(FIG_DIR / "figure5_rotation_sweep.pdf", bbox_inches="tight", facecolor="white")
+print("saved figure5_rotation_sweep")
+plt.show()
+"""),
+
+    ("md", """\
+## Panel D — Relative rotation sweep: example lineages
+
+6 × 4 grid: rows = (VOL-ABM J=50/40/20, VOL-PDE J=50/40/20), columns = relrot mode.
+Run selected at median `exposed_frac`. Uniform crop across all images.
+"""),
+
+    ("code", """\
+def panel_d() -> plt.Figure:
+    # First pass: load all runs
+    keys = [(reg, adh, rl) for reg in REG_DYN_ORDER
+            for adh in ADH_ORDER for rl in RELROT_ORDER]
+    snapshots: dict[tuple, tuple] = {}
+    for reg_dyn, adh, rl in keys:
+        cond = _cond_name(adh, rl)
+        geo, lmap, med = _load_median_run(cond, SIM_ID_MAP[reg_dyn], exp_df, "exposed_frac")
+        snapshots[(reg_dyn, adh, rl)] = (geo, lmap, med)
+
+    all_geos = [v[0] for v in snapshots.values() if v[0] is not None]
+    target_size = uniform_crop_size(all_geos, pad=6)
+    print(f"panel D uniform crop: {target_size}px")
+
+    n_rows = len(REG_DYN_ORDER) * len(ADH_ORDER)
+    n_cols = len(RELROT_ORDER)
+    fig, axes = plt.subplots(n_rows, n_cols,
+                              figsize=(3.4 * n_cols, 3.4 * n_rows),
+                              squeeze=False)
+
+    for ri_reg, reg_dyn in enumerate(REG_DYN_ORDER):
+        for ri_adh, adh in enumerate(ADH_ORDER):
+            row = ri_reg * len(ADH_ORDER) + ri_adh
+            for ci, rl in enumerate(RELROT_ORDER):
+                ax = axes[row, ci]
+                geo, lmap, med = snapshots[(reg_dyn, adh, rl)]
+                if geo is None:
+                    ax.text(0.5, 0.5, "no data", ha="center", va="center",
+                            transform=ax.transAxes)
+                    ax.axis("off")
+                    continue
+                render_raw(crop_centered(geo, target_size),
+                           label_map=crop_centered(lmap, target_size), ax=ax, title="")
+                ax.axis("off")
+                if row == 0:
+                    ax.set_title(RELROT_LABELS[rl], fontsize=FONT_SIZE_TITLE,
+                                  pad=8, fontweight="bold")
+                if ci == 0:
+                    ax.text(0.04, 0.97, f"{reg_dyn}\\nJ={adh}",
+                            transform=ax.transAxes, fontsize=FONT_SIZE_LABEL,
+                            fontweight="bold", va="top", ha="left", color="white",
+                            bbox=dict(boxstyle="round,pad=0.3", facecolor="#333333", alpha=0.75))
+                if not np.isnan(med):
+                    ax.text(0.97, 0.03, f"{med:.3f}", transform=ax.transAxes,
+                            fontsize=FONT_SIZE_LABEL, va="bottom", ha="right", color="white",
+                            bbox=dict(boxstyle="round,pad=0.2", facecolor="#333333", alpha=0.65))
+
+        # Separator line between VOL-ABM and VOL-PDE blocks
+        if ri_reg < len(REG_DYN_ORDER) - 1:
+            sep_row = (ri_reg + 1) * len(ADH_ORDER)
+            for ci in range(n_cols):
+                sep_ax = axes[sep_row - 1, ci]
+                sep_ax.plot([0, 1], [0, 0], transform=sep_ax.transAxes,
+                            color="#aaaaaa", linewidth=2, clip_on=False)
+
+    fig.suptitle("Rotation sweep example lineages (median exposed_frac)",
+                  fontsize=FONT_SIZE_TITLE)
+    fig.subplots_adjust(left=0.02, right=0.99, top=0.97, bottom=0.01,
+                         wspace=0.04, hspace=0.06)
+    return fig
+
+
+fig_d = panel_d()
+fig_d.savefig(FIG_DIR / "figure5_rotation_sweep_lineages.png", bbox_inches="tight", facecolor="white")
+fig_d.savefig(FIG_DIR / "figure5_rotation_sweep_lineages.pdf", bbox_inches="tight", facecolor="white")
+print("saved figure5_rotation_sweep_lineages")
+plt.show()
+"""),
+
+    ("md", """\
+## Panel E — NB connectivity heatmap
+
+Fraction of 50 runs where all NBs form one connected component.
+Rows = adhesion J (50 / 40 / 20), columns = relrot mode.
+Diverging colormap (PuOr_r) centered at 0.5.
+"""),
+
+    ("code", """\
+def panel_e() -> plt.Figure:
+    norm = mcolors.TwoSlopeNorm(vmin=0.0, vcenter=0.5, vmax=1.0)
+
+    fig, axes = plt.subplots(
+        1, len(REG_DYN_ORDER),
+        figsize=(6.0 * len(RELROT_ORDER), 3.2 * len(ADH_ORDER)),
+        squeeze=False,
+    )
+
+    for ci, reg_dyn in enumerate(REG_DYN_ORDER):
+        ax = axes[0, ci]
+        sub = all_df[all_df["regulatory_dynamic"] == reg_dyn]
+
+        mat = np.full((len(ADH_ORDER), len(RELROT_ORDER)), np.nan)
+        for ai, adh in enumerate(ADH_ORDER):
+            for rli, rl in enumerate(RELROT_ORDER):
+                vals = sub[(sub["adhesion"] == adh) & (sub["relrot_label"] == rl)
+                            ]["nb_connected"].dropna()
+                if not vals.empty:
+                    mat[ai, rli] = float(vals.mean())
+
+        im = ax.imshow(mat, norm=norm, cmap="PuOr_r", aspect="auto")
+        ax.set_xticks(range(len(RELROT_ORDER)))
+        ax.set_xticklabels([RELROT_LABELS[r] for r in RELROT_ORDER])
+        ax.set_yticks(range(len(ADH_ORDER)))
+        ax.set_yticklabels([f"J={a}" for a in ADH_ORDER])
+        ax.set_xlabel("Relative rotation mode")
+        if ci == 0:
+            ax.set_ylabel("Adhesion J(NB,NB)")
+        ax.set_title(reg_dyn, fontsize=FONT_SIZE_TITLE, pad=8, fontweight="bold")
+
+        for ai in range(len(ADH_ORDER)):
+            for rli in range(len(RELROT_ORDER)):
+                v = mat[ai, rli]
+                if not np.isnan(v):
+                    txt_color = "white" if abs(v - 0.5) > 0.25 else "black"
+                    ax.text(rli, ai, f"{v:.2f}", ha="center", va="center",
+                            fontsize=FONT_SIZE_LABEL, fontweight="bold", color=txt_color)
+
+        plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label="Frac. connected")
+
+    fig.suptitle("NB connectivity — fraction of runs with all NBs in one connected component",
+                  fontsize=FONT_SIZE_TITLE)
+    fig.tight_layout()
+    return fig
+
+
+fig_e = panel_e()
+fig_e.savefig(FIG_DIR / "figure5_connectivity_heatmap.png", bbox_inches="tight", facecolor="white")
+fig_e.savefig(FIG_DIR / "figure5_connectivity_heatmap.pdf", bbox_inches="tight", facecolor="white")
+print("saved figure5_connectivity_heatmap")
+plt.show()
+"""),
+
+    ("md", """\
+## Panel F — Connectivity heatmap: example lineages (supplement candidate)
+
+6 × 4 grid: rows = (VOL-ABM J=50/40/20, VOL-PDE J=50/40/20), columns = relrot mode.
+Run selected at median `exposed_frac`. Uniform crop across all images.
+"""),
+
+    ("code", """\
+def panel_f() -> plt.Figure:
+    # Re-use snapshots from panel_d (same metric: exposed_frac)
+    keys = [(reg, adh, rl) for reg in REG_DYN_ORDER
+            for adh in ADH_ORDER for rl in RELROT_ORDER]
+    snapshots: dict[tuple, tuple] = {}
+    for reg_dyn, adh, rl in keys:
+        cond = _cond_name(adh, rl)
+        geo, lmap, med = _load_median_run(cond, SIM_ID_MAP[reg_dyn], exp_df, "exposed_frac")
+        snapshots[(reg_dyn, adh, rl)] = (geo, lmap, med)
+
+    all_geos = [v[0] for v in snapshots.values() if v[0] is not None]
+    target_size = uniform_crop_size(all_geos, pad=6)
+    print(f"panel F uniform crop: {target_size}px")
+
+    n_rows = len(REG_DYN_ORDER) * len(ADH_ORDER)
+    n_cols = len(RELROT_ORDER)
+    fig, axes = plt.subplots(n_rows, n_cols,
+                              figsize=(3.4 * n_cols, 3.4 * n_rows),
+                              squeeze=False)
+
+    for ri_reg, reg_dyn in enumerate(REG_DYN_ORDER):
+        for ri_adh, adh in enumerate(ADH_ORDER):
+            row = ri_reg * len(ADH_ORDER) + ri_adh
+            for ci, rl in enumerate(RELROT_ORDER):
+                ax = axes[row, ci]
+                geo, lmap, med = snapshots[(reg_dyn, adh, rl)]
+                if geo is None:
+                    ax.text(0.5, 0.5, "no data", ha="center", va="center",
+                            transform=ax.transAxes)
+                    ax.axis("off")
+                    continue
+                render_raw(crop_centered(geo, target_size),
+                           label_map=crop_centered(lmap, target_size), ax=ax, title="")
+                ax.axis("off")
+                if row == 0:
+                    ax.set_title(RELROT_LABELS[rl], fontsize=FONT_SIZE_TITLE,
+                                  pad=8, fontweight="bold")
+                if ci == 0:
+                    ax.text(0.04, 0.97, f"{reg_dyn}\\nJ={adh}",
+                            transform=ax.transAxes, fontsize=FONT_SIZE_LABEL,
+                            fontweight="bold", va="top", ha="left", color="white",
+                            bbox=dict(boxstyle="round,pad=0.3", facecolor="#333333", alpha=0.75))
+                if not np.isnan(med):
+                    ax.text(0.97, 0.03, f"exp={med:.3f}", transform=ax.transAxes,
+                            fontsize=FONT_SIZE_LABEL, va="bottom", ha="right", color="white",
+                            bbox=dict(boxstyle="round,pad=0.2", facecolor="#333333", alpha=0.65))
+
+    fig.suptitle("Connectivity example lineages (median exposed_frac)",
+                  fontsize=FONT_SIZE_TITLE)
+    fig.subplots_adjust(left=0.02, right=0.99, top=0.97, bottom=0.01,
+                         wspace=0.04, hspace=0.06)
+    return fig
+
+
+fig_f = panel_f()
+fig_f.savefig(FIG_DIR / "figure5_connectivity_lineages.png", bbox_inches="tight", facecolor="white")
+fig_f.savefig(FIG_DIR / "figure5_connectivity_lineages.pdf", bbox_inches="tight", facecolor="white")
+print("saved figure5_connectivity_lineages")
 plt.show()
 """),
 ]

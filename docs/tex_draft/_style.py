@@ -1,5 +1,9 @@
 FONT_SIZE_TITLE = 20
 FONT_SIZE_LABEL = 16
+FONT_SIZE_SMALL = 13
+
+EXP_FILL_COLOR = "#f5b8b8"    # light red fill for experimental boxplots
+EXP_MEDIAN_COLOR = "#c0392b"  # dark red for experimental median lines
 
 RCPARAMS = {
     "font.family": "sans-serif",

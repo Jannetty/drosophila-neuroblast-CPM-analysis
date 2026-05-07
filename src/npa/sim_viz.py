@@ -148,7 +148,7 @@ def render_geo(
     image[_cell_boundary_mask(label_map)] = _hex_to_rgb01(HULL_COLOR)
     if ax is None:
         _, ax = plt.subplots(figsize=(7, 7))
-    ax.imshow(image, origin="upper")
+    ax.imshow(image, origin="upper", interpolation="nearest")
     ax.set_aspect("equal", adjustable="box")
     if title:
         ax.set_title(title)
@@ -204,7 +204,7 @@ def render_raw(
     image[_cell_boundary_mask(label_map)] = _hex_to_rgb01(HULL_COLOR)
     if ax is None:
         _, ax = plt.subplots(figsize=(7, 7))
-    ax.imshow(image, origin="upper")
+    ax.imshow(image, origin="upper", interpolation="nearest")
     ax.set_aspect("equal", adjustable="box")
     if title:
         ax.set_title(title)
