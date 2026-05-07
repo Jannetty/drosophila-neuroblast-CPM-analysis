@@ -8,13 +8,18 @@ Run:
 
 Layout of fig4.svg  (canvas 186.35728 × 204.89467 mm)
 ------------------
-Top    (x 0–186 mm, y 0–62 mm)   : Panel A — VCV schematic (inline matplotlib SVG, not a <image>)
-Middle (x 0–186 mm, y 62–113 mm) : figure4_metrics_grid_panel        [id: image1]
-Bottom (x 0–177 mm, y 113–208 mm): figure4_representative_lineages_panel [id: image1-3]
+Top    (x~19–167 mm, y 0–53 mm) : figure4_panel_a_draft   [inline <g id="figure_1"> → replaced with <image>]
+Middle (x 0–186 mm, y 62–107 mm): figure4_metrics_grid_panel      [id: image1]
+Bottom (x 0–177 mm, y 113–205 mm): figure4_representative_lineages_panel [id: image1-3]
 
 Panel D (figure4_best_vs_exp_panel) is NOT yet in the SVG — add in Inkscape.
 
-Box widths are kept fixed (full canvas); only heights are updated from PNG aspect.
+Panel A: the inline matplotlib SVG group (id="figure_1") is replaced with a PNG
+<image> at the same position/size derived from the original embed transform:
+  transform="matrix(0.16074583,0,0,0.16074583,9.3815203,8.7855515)"
+  matplotlib canvas: 917.64022 × 326.52219 pt → display 147.56 × 52.50 mm
+
+Box widths for B/C are kept fixed; only heights updated from PNG aspect.
 Target scale: figsize_B=18.4in, figsize_C=17.4in at scale=0.40 → 8pt effective.
 """
 from __future__ import annotations
@@ -34,9 +39,23 @@ FIG4_DIR  = FIG_DIR / "fig4"
 TEMPLATE_SVG = FIG4_DIR / "fig4.svg"
 OUTPUT_SVG   = FIG4_DIR / "fig4.svg"
 
+# ── Panel A inline-group replacement config ────────────────────────────────────
+# Original embed transform: matrix(0.16074583, 0, 0, 0.16074583, 9.3815203, 8.7855515)
+# matplotlib canvas in pt:  917.64022 wide × 326.52219 tall
+# → display in SVG mm:      147.556 wide × 52.497 tall at (x=9.382, y=8.786) in layer1
+PANEL_A_GROUP_ID = "figure_1"
+PANEL_A_X        = 9.3815203   # in layer1 local coords (mm)
+PANEL_A_Y        = 8.7855515   # in layer1 local coords (mm)
+PANEL_A_WIDTH    = 917.64022 * 0.16074583  # ≈ 147.556 mm
+
 # ── panel definitions ──────────────────────────────────────────────────────────
 
 PANELS: list[dict] = [
+    {
+        "name":         "panel_a",
+        "source":       FIG_DIR / "figure4_panel_a_draft.png",
+        "replace_group": PANEL_A_GROUP_ID,  # remove inline SVG, insert <image>
+    },
     {
         "name":          "metrics_grid",
         "source":        FIG_DIR / "figure4_metrics_grid_panel.png",
@@ -65,6 +84,45 @@ def _get_png_size(path: Path) -> tuple[int, int]:
     w = struct.unpack(">I", data[16:20])[0]
     h = struct.unpack(">I", data[20:24])[0]
     return w, h
+
+
+def _find_group_bounds(svg: str, group_id: str) -> tuple[int, int]:
+    """Return (start, end) byte offsets of <g id="group_id">...</g> in svg."""
+    pat = re.compile(r'<g\b(?=[^>]*\bid="' + re.escape(group_id) + r'")[^>]*>', re.DOTALL)
+    m = pat.search(svg)
+    if not m:
+        raise ValueError(f"<g id={group_id!r}> not found in SVG")
+    start = m.start()
+    pos   = m.end()
+    depth = 1
+    while depth > 0:
+        next_open  = svg.find("<g",   pos)
+        next_close = svg.find("</g>", pos)
+        if next_close == -1:
+            raise ValueError(f"Unmatched <g> for id={group_id!r}")
+        if next_open != -1 and next_open < next_close:
+            depth += 1
+            pos = next_open + 2
+        else:
+            depth -= 1
+            pos = next_close + 4
+    return start, pos
+
+
+def _replace_group_with_image(svg: str, group_id: str, data_uri: str,
+                               x: float, y: float, width: float, height: float) -> str:
+    start, end = _find_group_bounds(svg, group_id)
+    tag = (
+        f'<image\n'
+        f'       id="panel_a"\n'
+        f'       x="{x:.6f}"\n'
+        f'       y="{y:.6f}"\n'
+        f'       width="{width:.6f}"\n'
+        f'       height="{height:.6f}"\n'
+        f'       preserveAspectRatio="none"\n'
+        f'       xlink:href="{data_uri}" />'
+    )
+    return svg[:start] + tag + svg[end:]
 
 
 def _get_image_attr(svg: str, image_id: str, attr: str) -> str | None:
@@ -114,11 +172,23 @@ def build() -> None:
 
         png_w, png_h = _get_png_size(source)
         png_aspect   = png_w / png_h
+        data_uri     = _png_to_data_uri(source)
 
-        new_w: float | None = None
-        new_h: float | None = None
+        if panel.get("replace_group"):
+            # Panel A: replace inline SVG group with PNG <image>
+            display_w = PANEL_A_WIDTH
+            display_h = display_w / png_aspect
+            print(f"  [panel_a] replacing <g id=\"{panel['replace_group']}\"> with PNG image")
+            print(f"    position: x={PANEL_A_X:.3f}, y={PANEL_A_Y:.3f} mm (layer1 coords)")
+            print(f"    display:  {display_w:.2f} × {display_h:.2f} mm  "
+                  f"(PNG {png_w}×{png_h}, aspect {png_aspect:.4f})")
+            svg = _replace_group_with_image(svg, panel["replace_group"], data_uri,
+                                            PANEL_A_X, PANEL_A_Y, display_w, display_h)
+            print(f"Embedded {source.name} ({png_w}×{png_h}) → replaced group id={panel['replace_group']!r}")
 
-        if panel.get("adjust_height"):
+        elif panel.get("adjust_height"):
+            new_w: float | None = None
+            new_h: float | None = None
             for image_id in panel["ids"]:
                 svg_w_str = _get_image_attr(svg, image_id, "width")
                 if svg_w_str:
@@ -129,20 +199,17 @@ def build() -> None:
                     print(f"  [{panel['name']}] width={svg_w:.3f} mm, "
                           f"height: {old_h:.3f} → {new_h:.3f} mm "
                           f"(PNG {png_w}×{png_h}, aspect {png_aspect:.4f})")
-
-        data_uri = _png_to_data_uri(source)
-        for image_id in panel["ids"]:
-            svg = _replace_image_element(svg, image_id, data_uri,
-                                         new_width=new_w, new_height=new_h)
-        print(f"Embedded {source.name} ({png_w}×{png_h}) → ids: {panel['ids']}")
+            for image_id in panel["ids"]:
+                svg = _replace_image_element(svg, image_id, data_uri,
+                                             new_width=new_w, new_height=new_h)
+            print(f"Embedded {source.name} ({png_w}×{png_h}) → ids: {panel['ids']}")
 
     OUTPUT_SVG.write_text(svg, encoding="utf-8")
     print(f"\nWrote {OUTPUT_SVG}")
     print()
     print("Reminders:")
-    print("  • Panel A (VCV schematic) is inline SVG — not updated by this script.")
     print("  • figure4_best_vs_exp_panel is NOT yet in the SVG — add in Inkscape.")
-    print("  • Realign panels in Inkscape after running (heights changed).")
+    print("  • Panel A is now a PNG <image id='panel_a'>; realign in Inkscape if needed.")
 
 
 if __name__ == "__main__":
