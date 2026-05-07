@@ -219,14 +219,21 @@ The code is in a long CELLS list of strings. The rcParams block is in the second
 
 ---
 
-## Task 6: Update `figure12_paper_figures.ipynb` (generates fig1 + fig2 panels)
+## Task 6: Update `figure12_paper_figures.ipynb` (generates fig1 + fig2 panels) ✅ DONE
 
 **Files:**
 - Modify: `docs/tex_draft/figure12_paper_figures.ipynb`
 
-This is the most complex update. The notebook is standalone (no build script). Edit the JSON directly or via `nbformat`.
+> **Implementation note:** Completed with significant additional improvements beyond font unification:
+> - Experimental data boxes → light red (`EXP_FILL_COLOR`) with dashed dark red median across all panels
+> - Renamed "Intergenerational rotation mean shift" → "Apical axis reorientation" and "Fixed-axis variance sweep" → "Spindle orientation variance" throughout
+> - Geometry examples panel: uniform crop size for offset-shift row (two-pass approach), vertical scale bars with text beside bar, subtitle repositioning
+> - Experimental lineage rotations (135: −90°, 169/126: +90°) and "lineage area" subtitle in wt_examples panel
+> - `interpolation='nearest'` in `sim_viz.render_raw` to prevent upscale blur
+> - WT reference pinned to run 0035 (closest to mean) across all geometry rows
+> - FONT_SIZE_SMALL (13) reinstated as third tier for scale bars, subtitles, run labels
 
-- [ ] **Step 1: Update the rcParams cell (the cell containing `mpl.rcParams.update`)**
+- [x] **Step 1: Update the rcParams cell (the cell containing `mpl.rcParams.update`)**
 
 Find the cell with `"font.size": 14` (currently line 60 in the notebook JSON). Replace the dict:
 ```python
@@ -253,7 +260,7 @@ from _style import RCPARAMS as _RCPARAMS
 mpl.rcParams.update(_RCPARAMS)
 ```
 
-- [ ] **Step 2: Fix `style_publication_axis` helper function**
+- [x] **Step 2: Fix `style_publication_axis` helper function**
 
 Current:
 ```python
@@ -266,7 +273,7 @@ ax.tick_params(axis="x", length=0, labelsize=13, pad=4)
 ax.tick_params(axis="y", labelsize=13)
 ```
 
-- [ ] **Step 3: Fix `make_figure2_lineages_panel`**
+- [x] **Step 3: Fix `make_figure2_lineages_panel`**
 
 - `ax.set_title(display_label, pad=7, fontsize=20)` → keep 20
 - `ax.set_xlabel(f"run {run_id:04d}...", fontsize=13, ...)` → keep 13
@@ -274,7 +281,7 @@ ax.tick_params(axis="y", labelsize=13)
 - `fig.text(..., fontsize=13, ...)` (row subtitle) → keep 13
 - `add_scale_bar(ax, ..., fontsize=10)` → `fontsize=13`
 
-- [ ] **Step 4: Fix `make_grouped_metric_panel` (mixing + exposure panels)**
+- [x] **Step 4: Fix `make_grouped_metric_panel` (mixing + exposure panels)**
 
 Current (the whole function overrides to 24):
 ```python
@@ -297,13 +304,13 @@ for ax, (group_title, conditions) in zip(axes, FIG2_GROUPS):
 axes[0].set_ylabel(ylabel, fontsize=16)
 ```
 
-- [ ] **Step 5: Fix `make_figure2_composition_panel`**
+- [x] **Step 5: Fix `make_figure2_composition_panel`**
 
 - `ax.tick_params(axis="x", labelsize=14, pad=3)` → `labelsize=13`
 - `ax.set_title(title, fontsize=21, pad=10)` → `fontsize=20`
 - `fontsize=14, fontweight="bold"` (group labels below x-axis) → `fontsize=13, fontweight="bold"`
 
-- [ ] **Step 6: Fix calibration figure inline fontsizes**
+- [x] **Step 6: Fix calibration figure inline fontsizes**
 
 In the calibration boxplot function:
 - `medianprops={"color": "black", "linewidth": 1.3}` → keep (linewidth is fine)
@@ -314,7 +321,7 @@ In the `make_figure1_examples_panel` equivalent:
 - `fontsize=15` (scale bar text) → `fontsize=13`
 - `fontsize=19` (row labels `fig.text(...)`) → `fontsize=20`
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add docs/tex_draft/figure12_paper_figures.ipynb
@@ -323,7 +330,7 @@ git commit -m "style: unify figure12 (fig1+fig2) font sizes to 20/16/13 hierarch
 
 ---
 
-## Task 7: Create SVG normalization script + fix stray font in fig2.svg
+## Task 7: Create SVG normalization script + fix stray font in fig2.svg ✅ DONE
 
 **Files:**
 - Create: `docs/tex_draft/_normalize_svg_fonts.py`
@@ -331,7 +338,7 @@ git commit -m "style: unify figure12 (fig1+fig2) font sizes to 20/16/13 hierarch
 
 This script normalizes all Inkscape SVG assembly files to the 3-tier font size targets defined in the style guide.
 
-- [ ] **Step 1: Fix stray `font-family:Sans` in `fig2.svg`**
+- [x] **Step 1: Fix stray `font-family:Sans` in `fig2.svg`**
 
 In `docs/tex_draft/figures/fig2/fig2.svg` at line 671:
 ```
@@ -339,7 +346,7 @@ style="...font-family:Sans;..."
 ```
 Change `font-family:Sans` → `font-family:Helvetica`.
 
-- [ ] **Step 2: Create `_normalize_svg_fonts.py`**
+- [x] **Step 2: Create `_normalize_svg_fonts.py`**
 
 ```python
 """Normalize font sizes in Inkscape assembly SVGs to 3-tier style guide values.
@@ -415,24 +422,24 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 3: Dry-run to verify what will change**
+- [x] **Step 3: Dry-run to verify what will change**
 
 ```bash
 cd /path/to/repo && uv run python docs/tex_draft/_normalize_svg_fonts.py --dry-run
 ```
 Expected output lists font-size change counts per file. Review counts to confirm they're reasonable (fig1: ~many small → 3 buckets, etc.).
 
-- [ ] **Step 4: Run normalization**
+- [x] **Step 4: Run normalization**
 
 ```bash
 uv run python docs/tex_draft/_normalize_svg_fonts.py
 ```
 
-- [ ] **Step 5: Verify in Inkscape (manual step)**
+- [ ] **Step 5: Verify in Inkscape (manual step — owner to review)**
 
 Open each SVG in Inkscape and visually verify that text is still legible and not overlapping. The normalization only snaps to the nearest tier, so sizes that were already near a target won't move much.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add docs/tex_draft/_normalize_svg_fonts.py \
