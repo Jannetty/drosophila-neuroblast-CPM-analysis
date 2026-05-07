@@ -16,11 +16,7 @@ from npa.sim_preprocessing import (
     index_sim_files,
 )
 
-HULL_COLOR = "#606060"
-NB_COLOR = "#8e77b5"
-PROS_COLOR = "#259eae"
-POP2_COLOR = "#4a96b7"
-POP3_COLOR = "#00a6a4"
+from npa.colors import NB_COLOR, GMC_COLOR as POP2_COLOR, NEURON_COLOR as POP3_COLOR, SIM_HULL_COLOR as HULL_COLOR, PROS_COLOR
 
 
 def _hex_to_rgb01(hex_color: str) -> np.ndarray:

@@ -8,9 +8,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from matplotlib.patches import Polygon as PolygonPatch
 
-HULL_COLOR = "#d4d4d4"
-DPN_COLOR = "#8e77b5"
-PROS_COLOR = "#259eae"
+from npa.colors import NB_COLOR as DPN_COLOR, PROS_COLOR, EXP_HULL_COLOR as HULL_COLOR
 
 
 def _title(row: dict) -> str:
