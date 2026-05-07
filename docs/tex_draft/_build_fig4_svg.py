@@ -175,16 +175,24 @@ def build() -> None:
         data_uri     = _png_to_data_uri(source)
 
         if panel.get("replace_group"):
-            # Panel A: replace inline SVG group with PNG <image>
+            # Panel A: replace inline SVG group with PNG <image> on first run;
+            # on subsequent runs the group is gone and <image id="panel_a"> already exists.
             display_w = PANEL_A_WIDTH
             display_h = display_w / png_aspect
-            print(f"  [panel_a] replacing <g id=\"{panel['replace_group']}\"> with PNG image")
-            print(f"    position: x={PANEL_A_X:.3f}, y={PANEL_A_Y:.3f} mm (layer1 coords)")
             print(f"    display:  {display_w:.2f} × {display_h:.2f} mm  "
                   f"(PNG {png_w}×{png_h}, aspect {png_aspect:.4f})")
-            svg = _replace_group_with_image(svg, panel["replace_group"], data_uri,
-                                            PANEL_A_X, PANEL_A_Y, display_w, display_h)
-            print(f"Embedded {source.name} ({png_w}×{png_h}) → replaced group id={panel['replace_group']!r}")
+            try:
+                _find_group_bounds(svg, panel["replace_group"])
+                print(f"  [panel_a] replacing <g id=\"{panel['replace_group']}\"> with PNG image")
+                print(f"    position: x={PANEL_A_X:.3f}, y={PANEL_A_Y:.3f} mm (layer1 coords)")
+                svg = _replace_group_with_image(svg, panel["replace_group"], data_uri,
+                                                PANEL_A_X, PANEL_A_Y, display_w, display_h)
+                print(f"Embedded {source.name} ({png_w}×{png_h}) → replaced group id={panel['replace_group']!r}")
+            except ValueError:
+                print(f"  [panel_a] <image id=\"panel_a\"> already exists — updating href+height")
+                svg = _replace_image_element(svg, "panel_a", data_uri,
+                                             new_width=display_w, new_height=display_h)
+                print(f"Embedded {source.name} ({png_w}×{png_h}) → updated image id='panel_a'")
 
         elif panel.get("adjust_height"):
             new_w: float | None = None

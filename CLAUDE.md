@@ -45,6 +45,29 @@ python scripts/visualize_exp_lineage.py --list
 python scripts/visualize_exp_lineage.py --id <lineage_id> --view 3d
 ```
 
+## Figure regeneration — keep SVGs in sync
+
+Whenever you change anything that affects a figure — style parameters, cell-type
+colors, panel scripts, compositors, data — regenerate the affected figure before
+committing.  Use the Makefile targets:
+
+```
+make figures    # rebuild all figures (fig1–fig4)
+make fig1       # figure 1 only (runs figure12_paper_figures.ipynb → compositor → font normalize)
+make fig2       # figure 2 only (same notebook → compositor → font normalize)
+make fig3       # figure 3 only (figure3_paper_figures.py → compositor → font normalize)
+make fig4       # figure 4 only (panel_a script + figure4_paper_figures.ipynb → compositor)
+```
+
+Key files:
+- **Colors**: `src/npa/colors.py` — single source; change here and run `make figures`
+- **Font/style**: `docs/tex_draft/_style.py`
+- **Compositors**: `docs/tex_draft/_build_fig{1,2,3,4}_svg.py`
+- **Font normalizer**: `docs/tex_draft/_normalize_svg_fonts.py` (auto-run by make; excludes fig4)
+
+After `make figures`, open the SVGs in Inkscape to realign panels if display
+box sizes changed.
+
 ## Environment
 
 Python managed with `uv`. Run scripts as `uv run python scripts/...` or
