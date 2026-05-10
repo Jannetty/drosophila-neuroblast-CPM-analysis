@@ -17,6 +17,7 @@ from npa.metrics import (
     build_selected_sim_metrics,
     extract_exp_metrics,
     extract_sim_timepoint_metrics,
+    nb_connectivity,
     read_sim_comparison_input,
     summarize_exp_comparison_metrics,
     summarize_sim_comparison_rows,
@@ -407,3 +408,49 @@ def test_build_selected_sim_metrics_supports_future_wt_vcv0_series() -> None:
     assert row["genotype"] == "wt"
     assert row["critical_volume_mode"] == 0
     assert row["regulatory_dynamic"] == "NB-PDE"
+
+
+def test_nb_connectivity_single_blob() -> None:
+    geo = np.zeros((10, 10, 2), dtype=int)
+    geo[3:6, 3:6, 0] = 1
+    r = nb_connectivity(geo)
+    assert r["nb_connected"] is True
+    assert r["nb_n_components"] == 1
+    assert r["nb_n_pixels"] == 9
+
+
+def test_nb_connectivity_two_separate_blobs() -> None:
+    geo = np.zeros((10, 10, 2), dtype=int)
+    geo[1:3, 1:3, 0] = 1   # blob A — 4 pixels
+    geo[7:9, 7:9, 0] = 1   # blob B — 4 pixels, no adjacency with A
+    r = nb_connectivity(geo)
+    assert r["nb_connected"] is False
+    assert r["nb_n_components"] == 2
+    assert r["nb_n_pixels"] == 8
+
+
+def test_nb_connectivity_no_nbs() -> None:
+    geo = np.zeros((10, 10, 2), dtype=int)
+    geo[2:5, 2:5, 1] = 1   # only non-NB cells present
+    r = nb_connectivity(geo)
+    assert r["nb_connected"] is False
+    assert r["nb_n_components"] == 0
+    assert r["nb_n_pixels"] == 0
+
+
+def test_nb_connectivity_single_pixel() -> None:
+    geo = np.zeros((10, 10, 2), dtype=int)
+    geo[5, 5, 0] = 1
+    r = nb_connectivity(geo)
+    assert r["nb_connected"] is True
+    assert r["nb_n_components"] == 1
+    assert r["nb_n_pixels"] == 1
+
+
+def test_nb_connectivity_l_shaped_blob_is_connected() -> None:
+    geo = np.zeros((10, 10, 2), dtype=int)
+    geo[2:5, 2, 0] = 1   # vertical bar
+    geo[4, 2:5, 0] = 1   # horizontal bar — L-shape, all touching
+    r = nb_connectivity(geo)
+    assert r["nb_connected"] is True
+    assert r["nb_n_components"] == 1

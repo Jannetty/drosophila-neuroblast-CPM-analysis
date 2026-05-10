@@ -102,7 +102,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Preprocess experimental WRL lineage files into analysis NPZs."
     )
-    parser.add_argument("--wrl-dir", type=Path, default=Path("data/exp/wrl_files"))
+    parser.add_argument("--wrl-dir", type=Path, default=Path("data/exp/raw"))
     parser.add_argument("--out-dir", type=Path, default=Path("data/exp/processed"))
     parser.add_argument("--genotypes", nargs="+", default=None)
     parser.add_argument("--lobes", nargs="+", default=None)

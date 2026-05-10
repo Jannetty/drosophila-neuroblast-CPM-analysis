@@ -6,45 +6,67 @@
 \centering
 \includegraphics[width=.75\textwidth]{fig1/fig1.png}
 \caption{\textbf{Calibrated CPM of developing neuroblast lineage recapitulates expected WT lineage scale, composition, and organization.} 
-A. WT and mud Mutant planes of division and differentiation cascades.
-B. Schematic of how the CPM implements asymmetric division and GMC division.
+A. WT planes of division and differentiation cascades.
+B. Schematic of how the CPM implements WT asymmetric division and GMC division.
 C. Top: Three example simulated WT neuroblast lineages reflecting the 10th, 50th and 90th percentile of lineage area across all WT simulations. Bottom: The distribution of cells in three experimentally imaged WT lineages. Dots represent nuclear centroids.
 D. Distributions of five calibration metrics across experimental and simulated lineages.}
 \label{ch3-fig1}
 \end{figure}
 
-To establish a baseline WT model for later perturbation analyses, we first calibrated a spatiotemporal CPM-based ABM of the developing \textit{Drosophila} neuroblast lineage.
-In the WT rule set, the neuroblast divides after growing to $1.166\times$ its initial size.
-Each neuroblast has an apical axis (Figure \ref{ch3-fig1}B dashed line) and a default plane of division which passes through a point located $88\%$ down the apical axis from the apical end of the cell and centered laterally (Figure \ref{ch3-fig1}B top dashed line).
-By default, that division plane is perpendicular to the apical axis (Figure \ref{ch3-fig1}B top dashed line), and division-to-division angular variation is sampled from a distribution centered at $0^\circ$ with a standard deviation of $26^\circ$, matching the scale of the experimental WT angle distribution (see supplemental figure).
-Following division, the larger apical daughter remains a neuroblast, whereas the smaller basal daughter becomes a ganglion mother cell (GMC).
-The GMC then undergoes one final symmetric division along the cardinal axis that yields the longest new cell membrane (Figure \ref{ch3-fig1}B bottom) to produce two neurons. 
+To establish a baseline WT model for later perturbation analyses, we first built and calibrated a spatiotemporal two-dimensional CPM-based ABM of the developing \textit{Drosophila} NB lineage.
+The model contains three cell types: neuroblasts (NBs), ganglion mother cells (GMCs), and neurons.
+NBs divide asymmetrically, producing a larger apical daughter that remains a NB and a smaller basal daughter that becomes a GMC (Figure \ref{ch3-fig1}B left).
+GMCs then divide once more symmetrically to produce two neurons(Figure \ref{ch3-fig1}B right).
 Neurons neither grow nor divide.
-Full parameter values and the calibration workflow are described in Methods.
-% Parameterization details to port into Methods from ARCADE/PARAMETERS_EXPLAINED.md.
+NBs and GMCs grow until they reach a division threshold defined as their initial area multiplied by a size-target parameter.
+For GMCs, the size target was fixed at 2 so that a GMC divides after doubling in size producing two neurons that are each approximately the original GMC size (Figure \ref{ch3-fig1}B right).
 
-We anchored this calibration to WT endpoint summaries derived from the experimental dataset in \texttt{data/exp/processed/exp\_summary.csv}.
-See Methods for experimental data preprocessing details.
-In that dataset, WT lineages contained a mean of $44.93 \pm 21.68$ Pros$^{+}$ cells and exactly one Dpn$^{+}$ neuroblast at the terminal time point.
-WT lineage area averaged $501.2 \pm 125.8~\mu\mathrm{m}^2$, and because WT lineages end with one neuroblast, total and mean neuroblast area were both $51.9 \pm 42.6~\mu\mathrm{m}^2$.
-We calibrated the baseline WT condition shown here (\texttt{wt\_divMean0Stdev26}, \texttt{sim61}, \texttt{VCV=1}) to match these five metric summaries.
+To implement WT asymmetric NB division, we assigned each NB an apical axis (Figure \ref{ch3-fig1}B left dashed line) and a default division plane that passes through a point displaced toward the basal end of the cell (Figure \ref{ch3-fig1}B left dotted line).
+This offset from the apical end is a calibrated parameter.
+When calibrating the apical axis offset, the size target for the neuroblast was set such that, assuming the neuroblast was a circle, the asymmetric division would yield a cell that was the same area as the initial NB (see methods).
+
+We then used experimental WT lineage data to define the metrics the model should match at the end of a 36-hour simulation window.
+Our reference dataset consisted of immunohistochemistry-stained WT and \textit{mud} mutant larval brains collected 72--96 hours after egg laying, which corresponds to the end of the developmental period represented in the model.
+These samples were stained for Deadpan (Dpn), which marks NBs, and Prospero (Pros), which marks GMCs and neurons \cite{zhu_2012_bhlhrepressordeadpan, li_2000_panneuralprosperoterminates}, allowing us to identify NB and non-NB nuclei within each lineage.
+From the processed WT dataset, we extracted five endpoint summary metrics for calibration: lineage area, Pros$^{+}$ cell count, Dpn$^{+}$ cell count, total Dpn area, and mean Dpn area (see Methods).
+WT lineages contained a mean of $44.93 \pm 21.68$ Pros$^{+}$ cells and exactly one Dpn$^{+}$ NB at the terminal time point.
+WT lineage area averaged $501.2 \pm 125.8~\mu\mathrm{m}^2$, and because WT lineages end with one NB, total and mean NB area were both $51.9 \pm 42.6~\mu\mathrm{m}^2$.
+We additionally constrained the parameter search to biologically reasonable cell-cycle durations, requiring NB cell cycles to be under 90 minutes and GMC cell cycles to exceed 8 hours \cite{homem_2014_ecdysonemediatorchange, sillerNuMArelatedMudProtein2006}.
+
+Using these experimental summaries as targets, we calibrated NB and GMC growth rates, the NB size target, and NB division division-plane offset.
+The NB division-plane offset and the NB size target together determine daughter starting sizes and therefore the size to which those cells must regrow before dividing again, influincing volume metrics for all cell types and the relative growth rates needed to match the cell cycle durations we were targeting.
+Because these parameters were all linked, they had to be calibrated jointly rather than independently.
+This was done thorugh rounds of estimation and iterative testing.
+
+After calibration, the NB division division-plane offset was $86\%$ down the apical axis from the apical end of the cell (Figure \ref{ch3-fig1}B left dotted line).
+The NB divides after growing to $1.166\times$ its initial size, generating an apical NB daughter that is approximately the same size as the initial NB.
+By default, the division plane is perpendicular to the apical axis (Figure \ref{ch3-fig1}B left dotted line).
+Division-to-division variation in spindle orientation is introduced by rotating that default plane by a value $\theta$ drawn from a normal distribution centered at $0^\circ$ with a standard deviation of $26^\circ$, matching the scale of the experimental WT angle distribution (Figure \ref{ch3-fig1}B left solid line; see supplemental figure).
+Full parameter values and the calibration workflow are described in Methods.
 Across simulated WT runs, the model produces lineages with a mean area of $525.4~\mu\mathrm{m}^2$, $46.42$ Pros$^{+}$ cells, one Dpn$^{+}$ neuroblast, and a mean neuroblast area of $64.2~\mu\mathrm{m}^2$, placing the simulated distribution within one standard deviation of the experimental WT mean for all calibration targets (Figure\ref{ch3-fig1}D).
 
-Representative simulated WT lineages also qualitatively resemble experimental WT lineages across the observed range of lineage sizes (Figure\ref{ch3-fig1}C).
-In both simulation and experiment, the neuroblast typically remains peripheral to the lineage while differentiated GMCs and neurons occupy most of the interior.
-Importantly, this peripheral organization was not itself a calibration target.
-Instead, the calibration is performed only against endpoint lineage scale and composition, allowing the spatial organization used in later sections to function as an emergent model behavior rather than a quantity fit by construction.
+The distribution of cells in the simulated WT lineages resembled experimental WT lineages (Figure\ref{ch3-fig1}C).
+In both simulation and experiment, the neuroblast typically remains peripheral to the lineage (Figure\ref{ch3-fig1}C).
+Importantly, this peripheral organization was not itself a calibration target but emerged from the dynamics implemented in the model.
 
 Together, these results indicate that the calibrated WT CPM captures the expected scale and composition of the lineage while remaining sufficiently unconstrained spatially to serve as a mechanistic testbed for hypotheses about division geometry and lineage organization.
 
 \subsection{Distinct components of WT division geometry differentially affect lineage organization.}
 
-Because spatial organization emerged in the calibrated WT model without being used as a fitting target, we next used that baseline to test which aspects of the imposed division geometry were most important for maintaining the sorted WT lineage morphology.
+Because the peripheral NB organization of the NB lineage emerged in the calibrated WT model without being used as a fitting target, we concluded that the growth and division dynamics implemented in the model were sufficient to establish and maintain this organization.
+We next wanted to identify which aspects of the imposed division geometry were most important for establishing and maintaining the sorted WT lineage morphology.
 In the model, WT division dynamics contain three separable geometric components.
-These are the orientation of the apical axis, the amount of rotation applied to the default plane of division, and the degree to which the division plane is offset away from the apical membrane.
-We systematically perturbed each component while holding the others constant in order to assess its impact on lineage organization.
-To quantify those effects, we used two spatial readouts.
+The first is apical axis reorientation, which defines how much the NB's internal apical axis changes from one division to the next (Figure \ref{ch3-fig2}A top).
+\invivo, the orientation of the apical/basal axis is determined by X determining apical/basal cortical polarity.
+The second is spindle orientation range, which defines how much the division plane can rotate around its default orientation at each division and is implemented as the standard deviation of the rotation distribution (Figure \ref{ch3-fig2}A bottom left).
+\invivo, spindle orientation is determined by ... Importantly, mutant neuroblasts have shown that a neuroblast can have a spindle orientation that is divorced from the apical/basal coritcal polarty \cite{cabernard_2009_apicalbasalspindlea}.
+The third is offset shift, which defines how far the division plane is displaced from the apical end of the NB along the apical/basal axis (Figure \ref{ch3-fig2}A bottom right).
+\invivo, this is determined by X.
+We systematically perturbed each of these three components of asymmetric cell division while holding the others constant in order to assess its impact on lineage organization.
+
+To quantify the effects of these perturbations on the organization of the resulting lineage, we used two spatial readouts.
 First, we measured normalized heterotypic contact fraction, which reports the extent to which neuroblast and non-neuroblast cell territories intermingle relative to the amount of mixing expected from the lineage composition alone (see Methods).
+For this metric, higher values mean more mixing of cell types in the lineage and lower values mean more separation of cell types.
 Second, we measured the fraction of the neuroblast perimeter exposed to extracellular space, which reports how peripherally the neuroblast remains positioned within the lineage.
 Together, these metrics distinguish lineages in which the neuroblast remains spatially segregated at the edge from lineages in which it becomes internalized and more intermixed with differentiated progeny.
 

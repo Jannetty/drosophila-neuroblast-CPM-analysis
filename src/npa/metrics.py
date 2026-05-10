@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from scipy import ndimage as _ndi
 from scipy.spatial import KDTree
 
 from npa.sim_preprocessing import _load_json, _to_repo_relative, index_sim_files
@@ -130,9 +131,10 @@ EXP_SUMMARY_COLUMNS = [
 
 CONDITION_PATTERN = re.compile(
     r"^(?:(?:wt|mudmut)_)?"
+    r"(?:adh(?P<adhesion>\d+)_)?"
     r"divMean(?P<div_mean>-?\d+)Stdev(?P<div_stdev>-?\d+)"
     r"(?:_rotMean(?P<rot_mean>-?\d+)Stdev(?P<rot_stdev>-?\d+))?"
-    r"(?:_noadhesion|_relrot|_yoffset\d+)*$"
+    r"(?:_noadhesion|_relrotMean(?P<relrot_mean>\d+)|_relrot|_yoffset\d+)*$"
 )
 
 REGULATORY_DYNAMIC_BY_SUFFIX = {
@@ -412,22 +414,46 @@ def _condition_metadata(condition: str) -> dict[str, Any]:
     match = CONDITION_PATTERN.match(condition)
     if match is None:
         return {
+            "adhesion": np.nan,
             "div_mean": np.nan,
             "div_stdev": np.nan,
             "rot_mean": np.nan,
             "rot_stdev": np.nan,
+            "relrot": False,
+            "relrot_mean": np.nan,
         }
     rot_mean = match.group("rot_mean")
     rot_stdev = match.group("rot_stdev")
+    adh_str = match.group("adhesion")
+    relrot_mean_str = match.group("relrot_mean")
     return {
+        "adhesion": int(adh_str) if adh_str is not None else np.nan,
         "div_mean": int(match.group("div_mean")),
         "div_stdev": int(match.group("div_stdev")),
         "rot_mean": int(rot_mean) if rot_mean is not None else 0,
         "rot_stdev": int(rot_stdev) if rot_stdev is not None else 0,
+        "relrot": "_relrot" in condition,
+        "relrot_mean": int(relrot_mean_str) if relrot_mean_str is not None else np.nan,
     }
 
 
+VCV_SIM_METADATA: dict[str, dict[str, Any]] = {
+    "vcv1_noreg":   {"genotype": "mudmut", "critical_volume_mode": 1, "regulatory_dynamic": "NONE"},
+    "vcv1_nb_abm":  {"genotype": "mudmut", "critical_volume_mode": 1, "regulatory_dynamic": "NB-ABM"},
+    "vcv1_vol_abm": {"genotype": "mudmut", "critical_volume_mode": 1, "regulatory_dynamic": "VOL-ABM"},
+    "vcv1_nb_pde":  {"genotype": "mudmut", "critical_volume_mode": 1, "regulatory_dynamic": "NB-PDE"},
+    "vcv1_vol_pde": {"genotype": "mudmut", "critical_volume_mode": 1, "regulatory_dynamic": "VOL-PDE"},
+    "vcv0_noreg":   {"genotype": "mudmut", "critical_volume_mode": 0, "regulatory_dynamic": "NONE"},
+    "vcv0_nb_abm":  {"genotype": "mudmut", "critical_volume_mode": 0, "regulatory_dynamic": "NB-ABM"},
+    "vcv0_vol_abm": {"genotype": "mudmut", "critical_volume_mode": 0, "regulatory_dynamic": "VOL-ABM"},
+    "vcv0_nb_pde":  {"genotype": "mudmut", "critical_volume_mode": 0, "regulatory_dynamic": "NB-PDE"},
+    "vcv0_vol_pde": {"genotype": "mudmut", "critical_volume_mode": 0, "regulatory_dynamic": "VOL-PDE"},
+}
+
+
 def _sim_metadata(sim_id: str) -> dict[str, Any]:
+    if sim_id in VCV_SIM_METADATA:
+        return dict(VCV_SIM_METADATA[sim_id])
     digits = "".join(ch for ch in sim_id if ch.isdigit())
     if len(digits) != 2:
         return {
@@ -557,6 +583,35 @@ def summarize_exp_comparison_metrics(df: pd.DataFrame) -> pd.DataFrame:
         .reset_index()
     )
     return summary.loc[:, EXP_SUMMARY_COLUMNS]
+
+
+def nb_connectivity(geo: np.ndarray) -> dict[str, Any]:
+    """
+    Connected-component analysis of the NB pixel region at a single timepoint.
+
+    Parameters
+    ----------
+    geo : ndarray, shape (H, W, 2)
+        Channel 0: NB pixel map (>0 = NB occupied).
+        Channel 1: non-NB cell pixel map (unused here).
+
+    Returns
+    -------
+    dict with keys:
+        nb_connected    : bool — True if all NB pixels form one connected component
+        nb_n_components : int  — number of connected NB components (0 if no NBs)
+        nb_n_pixels     : int  — total NB pixel count
+    """
+    nb_mask = geo[..., 0] > 0
+    n_pixels = int(nb_mask.sum())
+    if n_pixels == 0:
+        return {"nb_connected": False, "nb_n_components": 0, "nb_n_pixels": 0}
+    _, n_comp = _ndi.label(nb_mask)
+    return {
+        "nb_connected": n_comp == 1,
+        "nb_n_components": n_comp,
+        "nb_n_pixels": n_pixels,
+    }
 
 
 def write_exp_metrics_csv(df: pd.DataFrame, out_path: Path) -> None:

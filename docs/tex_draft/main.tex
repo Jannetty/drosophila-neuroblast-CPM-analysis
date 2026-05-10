@@ -29,13 +29,19 @@
 \let\mffont=\sf
 % --- end-of-sample-stuff ---
  
+\usepackage[backend=biber,style=numeric,sorting=nyt]{biblatex}
+\addbibresource{uw_thesis.bib}
+
 \usepackage{graphicx}
-\graphicspath{{./figures/}{./2_ch2_review/figures/}}
+\graphicspath{{./figures/}}
 \usepackage{subcaption}
 \usepackage{amsmath}
 \usepackage{booktabs}
 \usepackage{hyperref}
 \usepackage{capt-of}
+\usepackage{xurl}
+\usepackage{tabularx}
+\usepackage{float}
 \newcommand{\insilico}{\textit{in silico }}
 \newcommand{\invitro}{\textit{in vitro }}
 \newcommand{\invivo}{\textit{in vivo }}
@@ -88,5 +94,8 @@ We are currently in the process of preparing this work for submission.
 \input{_conclusion.tex}
 \input{_methods.tex}
 \input{_supplement.tex}
+
+\nocite{*}
+\printbibliography
 
 \end{document}

@@ -1,9 +1,37 @@
 \section{Introduction}
 
-Here is the introduction.
+Asymmetric cell division (ACD) is the process by which cells divide into two daughter cells that differ in fate, size, or both \cite{horvitzMechanismsAsymmetricCell1992, sunchuPrinciplesMechanismsAsymmetric2020, knoblichAsymmetricCellDivision2010, venkei_2018_emergingmechanismsasymmetric, liArtChoreographingAsymmetric2013a}.
+During development, ACD allows stem cells to self-renew while producing a population of differentiated cells that will eventually form an organ.
+ACD determines the number and identity of cells in developing tissues and organs, thus its regulation is crucial for ensuring consistent developmental outcomes\cite{yang_2021_centrosomeregulationfunction, lechlerSpindlePositioningIts2021, bolkent_2024_cellularmolecularmechanisms}.
+In the nervous system, disruption of ACD regulation has been linked to abnormal brain growth and neurodevelopmental disorders, including microcephaly \cite{yang_2021_centrosomeregulationfunction, siskos_2021_moleculargeneticsmicrocephaly, vaidProgenitorBasedCellBiological2022}.
 
+\textit{Drosophila} larval neuroblasts provide a tractable system for studying the regulation of ACD during brain development \cite{gallaud_2017_drosophilamelanogasterneuroblastsa, sunchuPrinciplesMechanismsAsymmetric2020}.
+In wild-type flies, a neural stem cell called a neuroblast (NB) divides asymmetrically along a plane perpendicular to its apical/basal axis to produce a larger apical daughter that retains NB identity and a smaller basal daughter called a ganglion mother cell (GMC) (Figure \ref{ch3-fig1} A)\cite{gallaud_2017_drosophilamelanogasterneuroblastsa, cabernard_2009_apicalbasalspindlea, homemDrosophilaNeuroblastsModel2012}.
+The GMC then divides once more to generate two terminally differentiated neurons (Figure \ref{ch3-fig1} A)\cite{gallaud_2017_drosophilamelanogasterneuroblastsa, cabernard_2009_apicalbasalspindlea}.
+Across successive divisions, this produces a consistent lineage morphology in which the NB remains at one peripheral end of the lineage (Figure \ref{ch3-fig1} c bottom).
+This organization suggests that correct neurogenesis depends on both the number of cells produced and the repeated spatial placement of those cells by precisely regulated asymetric division geometry.
 
-\textit{mud} Mutant neuroblasts exhibit a counterintuitive phenotype where they have more neuroblasts but fewer cells (supplemental exp data).
-The neuroblasts in \textit{mud} mutant lineages originate from symmetric divisions, which yield two neuroblasts of equal size side by side (Figure \ref{ch3-fig1} A lower).
+Division geometry is not only important in establishing the morphology of the developing neuroblast lineage, but also in determining the identity of the daughter cells \cite{cabernard_2009_apicalbasalspindlea}.
+In \textit{mud} mutant flies, spindle orientation is disrupted and approximately 15\% of NB divisions become symmetric, producing two neuroblast daughters side by side instead of a neuroblast and a GMC \cite{sillerNuMArelatedMudProtein2006, cabernard_2009_apicalbasalspindlea}.
+This change in the plane of division changes the differential sequestration of cell identity determinant proteins in the daughter cells, leading to differential identity outcomes\cite{cabernard_2009_apicalbasalspindlea}.
+Paradoxically, despite having more neuroblasts and therefore greater apparent proliferative potential, \textit{mud} mutant lineages are smaller overall and contain fewer total cells than wild-type lineages \cite{delgado_2025_alteringcellsize}.
+Experimental observations further suggest that when multiple neuroblasts are present in a \textit{mud} mutant lineage, they often remain adjacent to one another rather than becoming separated by differentiated progeny.
 
-Previous models have used a series of ordinary differential equation models to interrogate the system, but those models lack cell-scale variability.
+Many questions about this system are challenging to investigate experimentally.
+In particular, several coupled features of asymmetric NB division act simultaneously \invivo: the orientation of the apical/basal axis across generations, stochastic variation in spindle orientation relative to that axis, and the position of the division plane along the axis.
+These features are biologically meaningful to separate because they are governed by partially distinct cellular machinery: cortical polarity proteins establish the apical/basal axis, Pins/Mud-dependent machinery aligns the spindle relative to that axis, and polarized actomyosin dynamics together with cleavage-furrow positioning contribute to daughter-size asymmetry and asymmetric furrow (or plane of division) placement \cite{prehodaPolarizationDrosophilaNeuroblasts2009, penkert_2024_drosophilaneuroblastpolarity, sillerNuMArelatedMudProtein2006, cabernard_2010_spindleindependentcleavagefurrow, connell_2011_asymmetriccorticalextension, tsankovaCellPolarityRegulates2017, roubinetSpatiotemporallySeparatedCortical2017a, pham_2019_spatiotemporallycontrolledmyosin}.
+Because these features normally change together, it is difficult to determine experimentally which are most responsible for maintaining morphologically consistent wild-type lineages.
+It is likewise unclear which regulatory mechanisms are sufficient to prevent \textit{mud} mutant lineages from outgrowing wild type, which mutant division features drive neuroblast adjacency, and what regulatory features could plausibly maintain neuroblast proximity once extra neuroblasts are produced.
+
+Agent-based models (ABMs) are well suited to try to address these questions.
+ABMs represent individual cells as interacting entities with explicit rules for growth, division, differentiation, and neighbor-dependent behavior.
+Thus they allow us to model and assess how cell behavior may be influenced by internal and external factors.
+For a spatial representaation, cellular Potts models (CPMs) are also effective at capturing cell shape, adhesion, packing, and rearrangement, allowing lineage morphology to emerge from local cell-scale interactions\cite{graner_1992_simulationbiologicalcell, glazier_1993_simulationdifferentialadhesion, merks_2005_cellcenteredapproachdevelopmental, hirashima_2017_cellularpottsmodeling}.
+This makes CPM-based agent-based models particularly useful for developmental questions in which tissue architecture is an important readout.
+These models are powerful tools for studying this system as they allow us to simulate the evolution of the system after imposing perturbations that are difficult or impossible \invivo.
+
+Here, we develop a calibrated CPM-based agent-based model of developing \textit{Drosophila} neuroblast lineages and use it to test how division geometry and growth regulation shape lineage morphology in wild-type and \textit{mud} mutant conditions.
+We first calibrate the model to experimental wild-type lineage scale and composition, then ask which separable components of asymmetric division are most important for preserving the sorted wild-type morphology.
+We next use the model to evaluate candidate \textit{mud} regulatory mechanisms by testing whether altered division geometry alone explains mutant behavior, whether growth regulation linked to birth-size-dependent division thresholds is required to constrain mutant overgrowth, and whether preferential neuroblast-neuroblast adhesion is necessary to maintain neuroblast proximity.
+Our results show that stable intergenerational orientation is more important than moderate spindle-angle variance or reduced division-plane offset for maintaining wild-type lineage sorting, that altered division geometry alone predicts \textit{mud} lineage overgrowth, that volume-based regulation constrains mutant lineages only when division thresholds scale with daughter birth size, and that preferential neuroblast-neuroblast adhesion is not sufficient to keep mutant neuroblasts adjacent.
+Together, these findings identify division geometry and size-dependent growth regulation as coupled determinants of reproducible neuroblast lineage architecture.

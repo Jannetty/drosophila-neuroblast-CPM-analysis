@@ -1,5 +1,24 @@
 \section{Methods}
 
+\subsection{Immunohistochemistry}
+Primary antibodies used in this study were rat anti-dpn (1:100, Abcam 11D1BC7), mouse anti-pros (1:500, gift from Chris Doe)
+
+Secondary antibodies used were goat anti-rat (AlexaFluor 647, Invitrogen A21247), goat anti-mouse (AlexaFluor 405, Invitrogen A31553), goat anti-rabbit (AlexaFluor 405, Invitrogen A31556), goat anti-rabbit (AlexaFluor 647, Invitrogen A21245). All secondary antibodies were used at 1:1000. All experiments were conducted with at least 1 overnight in primary and 1 overnight in secondary antibody.
+
+Larvae were dissected by removing the posterior half and inverting, then removing organs, and severing the connections between the back end of the brain and the mouth parts, to minimize stretching of the brain during fixation.
+Dissected larvae were put in schneiders insect media until fixation. Fixation was performed in 4\% PFA in schneiders medium on a nutator for 20 minutes.
+PFA was then washed off with PBSBT (PBS, 1\% BSA, 0.1\% Triton-X) 3 times for 20 minutes on a nutator at room temperature.
+Antibodies were diluted in PBSBT and samples were incubated on a nutator at 4C. After primary staining, samples were washed with PBSBT 3 times for 20 minutes on a nutator at room temperature.
+Secondary antibody, also diluted in PBSBT, was then applied and incubated on a nutator at 4C.
+After secondary staining, samples were again washed 3 times for 20 minutes on a nutator at room temperature.
+Brains were then dissected off of the cuticles and put into vectashield.
+Brains were mounted on glass slides in a small channel of vectashield between two spacers (glass coverslips), with a third coverslip on top.
+All samples were imaged immediately after mounting on slides.
+
+\subsection{Immunohistochemistry image segmentation and analysis}
+
+To quantify Dpn volume, lineage volume, Pros+ cell number and Dpn number/lineage, we used Imaris 9.6 (and higher) to segment Dpn+ and Pros+ nuclei. Similarly, lineages were segmented and manually corrected if necessary. For lineage volume quantification, axonal projections were manually cut to account for image depth variations in our datasets. Segmentation was done by training Imaris’ pixel classifier or by using threshold segmentation.
+
 \subsection{Experimental lineage dataset and preprocessing}
 
 Experimental lineage measurements were derived from three-dimensional microscopy segmentations of \textit{Drosophila} larval brain lobes.
@@ -96,18 +115,18 @@ The GMC divides once more symmetrically to produce two neurons, and neurons neit
 \subsection{\textit{mud} mutant growth and division rules}
 To model \textit{mud} mutant lineages, division-plane rotation at each division is drawn from a normal distribution centered at \(0^\circ\) with standard deviation \(50^\circ\), compared with \(26^\circ\) for WT.
 We impose a threshold at \(\pm 75^\circ\) such that any sampled rotation exceeding \(75^\circ\) in magnitude is converted into a deterministic symmetric division along the neuroblast apical axis.
-In the mutant rule set used here, this yields approximately 13\% symmetric divisions, consistent with experimental observation \cite{CabernardDoe2009}.
+In the mutant rule set used here, this yields approximately 13\% symmetric divisions, consistent with experimental observation \cite{cabernard_2009_apicalbasalspindlea}.
 Mutant daughter neuroblasts inherit apical axes rotated relative to the parent axis by an amount drawn from a normal distribution with mean \(0^\circ\) and standard deviation \(30^\circ\).
 This inheritance rule is chosen to approximate the qualitative loss of stable spindle orientation observed experimentally in \textit{mud} mutant lineages.
 
 \paragraph{Calibration of division-plane rotation parameters.}
-The division-plane rotation standard deviation and symmetric-division threshold for \textit{mud} mutant simulations were calibrated from time-lapse measurements of NB division-axis angles tracked across successive divisions in \textit{mud} mutant and WT animals (Supplemental Figure X; see also \cite{CabernardDoe2009}).
+The division-plane rotation standard deviation and symmetric-division threshold for \textit{mud} mutant simulations were calibrated from time-lapse measurements of NB division-axis angles tracked across successive divisions in \textit{mud} mutant and WT animals (Supplemental Figure X; see also \cite{cabernard_2009_apicalbasalspindlea}).
 Step-to-step absolute rotation angles were computed from the change in the three-dimensional spindle-axis vector between consecutive time points and binned in \(15^\circ\) increments spanning \(0^\circ\)--\(180^\circ\).
 The \textit{mud} mutant distribution contained no observed divisions in the \(75^\circ\)--\(90^\circ\) bin, whereas the WT distribution showed no analogous gap.
-A similar discontinuity in \textit{mud} mutant division-axis rotation was reported by \citet{CabernardDoe2009}.
+A similar discontinuity in \textit{mud} mutant division-axis rotation was reported by \cite{cabernard_2009_apicalbasalspindlea}.
 We therefore set the symmetric-division threshold at \(75^\circ\): any rotation exceeding this value is classified as a symmetric division.
 
-Under this threshold, \(13\%\) of observed \textit{mud} mutant division steps exceeded \(90^\circ\) and were classified as symmetric divisions, consistent with the symmetric-division frequency reported by \citet{CabernardDoe2009}.
+Under this threshold, \(13\%\) of observed \textit{mud} mutant division steps exceeded \(90^\circ\) and were classified as symmetric divisions, consistent with the symmetric-division frequency reported by \cite{cabernard_2009_apicalbasalspindlea}.
 We calibrated the rotation standard deviation by finding the \(\sigma\) of a \(N(0,\,\sigma^2)\) distribution satisfying \(P(|X| > 75^\circ) \approx 13\%\), which yields \(\sigma = 50^\circ\).
 As a cross-check, the empirical standard deviation of the observed step-to-step rotations computed after excluding values greater than \(90^\circ\) was \(44^\circ\), which we considered sufficiently consistent with the model value of \(50^\circ\).
 
@@ -195,6 +214,7 @@ The WT baseline is calibrated against experimental endpoint summaries rather tha
 Calibration targets are lineage area, number of Pros-positive cells, number of Dpn-positive cells, total Dpn area, and mean Dpn area per lineage at the terminal time point.
 These quantities are compared to the averages calculated from the WT experimental data.
 Additional calibration constraints require WT neuroblast cycle times below 90 min and GMC cycle times of at least 8 h, both also experimentally observed metrics.
+When calibrating the apical axis offset, the size target for the neuroblast was set such that, assuming the neuroblast was a circle, the asymmetric division would yield a cell that was the same area as the initial NB.
 
 Offset-perturbed WT simulations require partial recalibration because shifting the division plane toward a more symmetric split changes daughter birth sizes and therefore alters lineage-scale outcomes even when the cell identity rules are unchanged.
 For these offset-perturbed conditions, NB and GMC growth rates are recalibrated to maintain approximately comparable terminal cell counts across conditions, rather than to preserve the WT volume-based metrics or cell-cycle-duration targets.

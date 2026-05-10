@@ -7,18 +7,18 @@ transforms).  Run this whenever a matplotlib panel is regenerated.
 Run:
     uv run python docs/tex_draft/_build_fig1_svg.py
 
-Layout of fig1.svg  (canvas 87.75 × 144.05 mm)
+Layout of fig1.svg  (canvas 112.19 × 148.96 mm)
 ------------------
-Top     (~y 2.9 – 56 mm)   : hand-drawn SVG schematic (division rules)
-Middle  (~y 56 – 117 mm)   : figure1_wt_examples_panel  [image id: image1-4-4]
-Gap     (~2 mm)
-Bottom  (~y 119 – 147 mm)  : figure1_wt_calibration_panel [image id: image1, base64-embedded]
+A (top-left)    (~y 2.9 – 33.6 mm, x 0 – 63 mm)  : hand-drawn schematic, WT division rules
+B (top-right)   (~y 2.9 – 33.6 mm, x 63 – 112 mm) : hand-drawn schematic, GMC division
+C (middle-left) (~y 33.6 – 116.7 mm)              : figure1_wt_examples_panel [image id: image1-4-4]
+D (bottom-left) (~y 116.7 – 153.4 mm)             : figure1_wt_calibration_panel [image id: image1]
 
-After resize (panels now 111.8 mm wide, SVG canvas needs to grow):
-  The compositor sets width and height on each image element from the PNG
-  dimensions at SCALE_FACTOR 0.40, then the user realigns in Inkscape.
+layer1 transform: translate(-0.29889275, -1.7726092)
+  → layer1 local coords = document coords + (0.299, 1.773)
 
-clipPath6 is defined in the SVG but is no longer referenced by any image element.
+Panel labels A/B/C/D are managed by this script (LABELS constant below).
+Positions are in layer1 local coordinates (mm).
 """
 from __future__ import annotations
 
@@ -42,6 +42,20 @@ OUTPUT_SVG   = FIG1_DIR / "fig1.svg"
 # At SCALE_FACTOR=0.40 with FONT_SIZE_TITLE=20pt the effective print size is 8pt.
 SCALE_FACTOR = 0.40
 FIGSIZE_W_IN = 11.0    # figsize used in make_wt_calibration_figure and make_wt_examples_figure
+
+# ── panel label definitions (layer1 local coords, mm) ─────────────────────────
+
+LABEL_STYLE = (
+    "font-style:normal;font-weight:bold;font-size:2.8222px;"
+    "font-family:Arial,Helvetica,sans-serif;fill:#000000"
+)
+
+LABELS: list[dict] = [
+    {"id": "label_a", "x": 2.2715294, "y": 7.056941,  "text": "A"},
+    {"id": "label_b", "x": 63.056221, "y": 7.056941,  "text": "B"},
+    {"id": "label_c", "x": 2.2715294, "y": 37.400002, "text": "C"},
+    {"id": "label_d", "x": 2.2343228, "y": 119.44305, "text": "D"},
+]
 
 # ── panel definitions ──────────────────────────────────────────────────────────
 
@@ -77,6 +91,32 @@ def _get_png_size(path: Path) -> tuple[int, int]:
     w = struct.unpack(">I", data[16:20])[0]
     h = struct.unpack(">I", data[20:24])[0]
     return w, h
+
+
+def _upsert_label(svg: str, label: dict) -> str:
+    """Update x/y of an existing panel label <text>, or insert it before </g></svg>."""
+    pattern = re.compile(
+        r'(<text\b[^>]*\bid="' + re.escape(label["id"]) + r'"[^>]*>)',
+        re.DOTALL,
+    )
+    def patch(m: re.Match) -> str:
+        tag = m.group(1)
+        tag = re.sub(r'\bx="[^"]*"', f'x="{label["x"]}"', tag)
+        tag = re.sub(r'\by="[^"]*"', f'y="{label["y"]}"', tag)
+        return tag
+
+    result, n = pattern.subn(patch, svg)
+    if n > 0:
+        return result
+
+    new_tag = (
+        f'    <text\n'
+        f'       id="{label["id"]}"\n'
+        f'       style="{LABEL_STYLE}"\n'
+        f'       x="{label["x"]}"\n'
+        f'       y="{label["y"]}">{label["text"]}</text>\n'
+    )
+    return svg.replace('</g></svg>', new_tag + '  </g></svg>')
 
 
 def _replace_image_element(svg: str, image_id: str, new_href: str,
@@ -143,11 +183,12 @@ def build() -> None:
             print(f"Copied {source.name} → {dest}")
             print(f"Embedded {source.name} as base64 → ids: {panel['ids']}")
 
+    for label in LABELS:
+        svg = _upsert_label(svg, label)
+        print(f"  [label_{label['text'].lower()}] x={label['x']}, y={label['y']}")
+
     OUTPUT_SVG.write_text(svg, encoding="utf-8")
     print(f"\nWrote {OUTPUT_SVG}")
-    print()
-    print("Reminders:")
-    print(f"  • Panel boxes are now {display_w_mm:.1f} mm wide; expand SVG canvas in Inkscape and realign.")
 
 
 if __name__ == "__main__":

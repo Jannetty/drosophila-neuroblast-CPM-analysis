@@ -6,16 +6,24 @@ Run this whenever a matplotlib panel is regenerated.
 Run:
     uv run python docs/tex_draft/_build_fig3_svg.py
 
-Layout of fig3.svg  (canvas 108.76 × 99.53 mm)
+Layout of fig3.svg  (canvas 111.76 × ~150.57 mm)
 ------------------
-Top   (x 20–108 mm, y 2.9–26 mm) : figure3_endpoint_metrics_panel  [id: image1-6]
-Main  (x 0–108 mm, y 26–99 mm)   : figure3_mutant_examples_panel   [id: image1]
+Hand-drawn  (document y 0–34 mm)  : mutant hypothesis schematic
+Top         (document y ~34–74 mm): figure3_endpoint_metrics_panel [id: image1-6]
+Bottom      (document y ~71–151mm): figure3_mutant_examples_panel  [id: image1]
 
-figure3_mutant_hypothesis_panel is NOT yet embedded — add in Inkscape.
+layer1 transform: translate(-20.241961, 9.8207353)
+  → image local x=20.24 maps to document x=0 (full-width panels)
+  → image local y=24.42 (endpoint_metrics) → document y≈34mm
+  → image local y=60.91 (mutant_examples) → document y≈71mm
+
+figure3_mutant_hypothesis_panel is NOT embedded here — it is the hand-drawn
+schematic at the top of the SVG template.
 
 Panel sizing: figsize=11in, SCALE_FACTOR=0.40 → display 111.76 mm wide → 8pt
-effective TITLE at print.  SVG canvas needs to expand from 108.76 mm to ~113 mm;
-realign in Inkscape after running.
+effective TITLE at print.  After running, realign panels in Inkscape if the
+endpoint_metrics height changed (the panel uses constrained_layout so its
+aspect ratio can shift slightly when fonts or data change).
 """
 from __future__ import annotations
 

@@ -130,6 +130,41 @@ def uniform_crop_size(geo_arrays: list[np.ndarray], pad: int = 6) -> int:
     return max_dim
 
 
+def _crop_pinned(arr: np.ndarray, size: int, y0: int, x0: int) -> np.ndarray:
+    """Crop arr[y0:y0+size, x0:x0+size], zero-padding any out-of-bounds edges."""
+    h, w = arr.shape[:2]
+    top_pad   = max(0, -y0)
+    left_pad  = max(0, -x0)
+    bot_pad   = max(0, y0 + size - h)
+    right_pad = max(0, x0 + size - w)
+    if top_pad or left_pad or bot_pad or right_pad:
+        ps = ((top_pad, bot_pad), (left_pad, right_pad), (0, 0)) if arr.ndim == 3 else ((top_pad, bot_pad), (left_pad, right_pad))
+        arr = np.pad(arr, ps, mode="constant")
+        y0 += top_pad
+        x0 += left_pad
+    if arr.ndim == 3:
+        return arr[y0:y0 + size, x0:x0 + size, :]
+    return arr[y0:y0 + size, x0:x0 + size]
+
+
+def crop_shared_top_right(arr: np.ndarray, tr_size: int, shared_top: int, pad: int = 6) -> np.ndarray:
+    """Crop so the shared content-top row appears at row `pad` from the crop top.
+    Panels whose content starts above shared_top get zeros prepended so their
+    content aligns at shared_top before cropping. Right edge is right-aligned.
+    """
+    occ = arr.any(axis=-1) if arr.ndim == 3 else arr > 0
+    ys, xs = np.where(occ)
+    if len(xs) == 0:
+        return crop_centered(arr, tr_size)
+    prepend = max(0, shared_top - int(ys.min()))
+    if prepend:
+        ps = ((prepend, 0), (0, 0), (0, 0)) if arr.ndim == 3 else ((prepend, 0), (0, 0))
+        arr = np.pad(arr, ps, mode="constant")
+    y0 = shared_top - pad
+    x0 = max(0, int(xs.max()) + pad - tr_size)
+    return _crop_pinned(arr, tr_size, y0, x0)
+
+
 def crop_centered(arr: np.ndarray, target_size: int) -> np.ndarray:
     occ = arr.any(axis=-1) if arr.ndim == 3 else arr > 0
     ys, xs = np.where(occ)
@@ -197,9 +232,11 @@ def representative_lineages_panel(wt_runs: pd.DataFrame, mud_runs: pd.DataFrame,
     ]
 
     for col, pct in enumerate(REPRESENTATIVE_PERCENTILES):
-        axes[0, col].set_title(f"{int(round(pct * 100))}th percentile", pad=20, fontsize=FONT_SIZE_TITLE)
-        axes[0, col].text(0.5, 1.0, "lineage area", transform=axes[0, col].transAxes,
-                          ha="center", va="bottom", fontsize=FONT_SIZE_LABEL)
+        axes[0, col].text(0.5, 1, f"{int(round(pct * 100))}th percentile",
+                          transform=axes[0, col].transAxes,
+                          ha="center", va="top", fontsize=FONT_SIZE_TITLE, fontweight="bold")
+        axes[0, col].text(0.5, 0.92, "lineage area", transform=axes[0, col].transAxes,
+                          ha="center", va="top", fontsize=FONT_SIZE_LABEL)
 
     snapshots = []
     for row_idx, (row_label, condition, sim_id, rep_df) in enumerate(rows):
@@ -209,21 +246,44 @@ def representative_lineages_panel(wt_runs: pd.DataFrame, mud_runs: pd.DataFrame,
 
     target_size = uniform_crop_size([s[2] for s in snapshots], pad=6)
 
+    # Shared alignment params for the two right mudmut panels.
+    # shared_top = the larger ys.min(), so the panel with MORE whitespace above sets
+    # the anchor; the other panel gets zeros prepended to match.
+    _TR_PAD = 6
+    _right_info: dict[int, tuple[int, int]] = {}
+    for ri, ci, geo_raw, _, _ in snapshots:
+        if ri == 1 and ci in (1, 2):
+            occ = geo_raw.any(axis=-1)
+            ys, _ = np.where(occ)
+            _right_info[ci] = (int(ys.min()), int(ys.max()))
+    _shared_top = max(v[0] for v in _right_info.values())
+    _BOTTOM_MARGIN = 12  # extra whitespace rows below content so cells don't touch axes edge
+    _tr_size = target_size
+    for ys_min, ys_max in _right_info.values():
+        prepend = max(0, _shared_top - ys_min)
+        bottom_in_crop = (ys_max + prepend) - (_shared_top - _TR_PAD)
+        _tr_size = max(_tr_size, bottom_in_crop + 1 + _BOTTOM_MARGIN)
+
     for row_idx, col_idx, geo_raw, label_map, row in snapshots:
         ax = axes[row_idx, col_idx]
-        geo_crop = crop_centered(geo_raw, target_size)
-        label_crop = crop_centered(label_map, target_size)
+        if row_idx == 1 and col_idx in (1, 2):
+            geo_crop   = crop_shared_top_right(geo_raw,   _tr_size, _shared_top, _TR_PAD)
+            label_crop = crop_shared_top_right(label_map, _tr_size, _shared_top, _TR_PAD)
+        else:
+            geo_crop = crop_centered(geo_raw, target_size)
+            label_crop = crop_centered(label_map, target_size)
         render_raw(geo_crop, ax=ax, label_map=label_crop, title="")
         ax.set_xticks([])
         ax.set_yticks([])
         for spine in ax.spines.values():
             spine.set_visible(False)
-        ax.set_xlabel(
-            f"run {int(row['run_id']):04d}\narea = {row['lin_area_vox'] * AREA_SCALE:.0f} µm²",
-            fontsize=FONT_SIZE_LABEL,
-            labelpad=2,
-        )
-        ax.xaxis.set_label_coords(0.5, -0.03)
+        label_text = f"run {int(row['run_id']):04d}\narea = {row['lin_area_vox'] * AREA_SCALE:.0f} µm²"
+        if row_idx == 0:
+            ax.text(0.5, 0.05, label_text, transform=ax.transAxes,
+                    ha="center", va="bottom", fontsize=FONT_SIZE_LABEL)
+        else:
+            ax.set_xlabel(label_text, fontsize=FONT_SIZE_LABEL, labelpad=2)
+            ax.xaxis.set_label_coords(0.5, 0.03)
 
     for row_idx, (row_label, *_) in enumerate(rows):
         bbox = axes[row_idx, 0].get_position()
@@ -237,7 +297,7 @@ def representative_lineages_panel(wt_runs: pd.DataFrame, mud_runs: pd.DataFrame,
             fontweight="bold",
         )
 
-    fig.subplots_adjust(left=0.10, right=0.995, top=0.93, bottom=0.05, wspace=0.04, hspace=0.30)
+    fig.subplots_adjust(left=0.10, right=0.995, top=0.98, bottom=0.11, wspace=0.04, hspace=0.01)
     return fig
 
 
@@ -255,23 +315,23 @@ def endpoint_metrics_panel(
         ("n_dpn", "NB count", "cells", False),
     ]
     fill_map = {
-        "WT Exp": EXP_FILL_COLOR,
-        "WT Sim": "#ffffff",
-        "mud Exp": EXP_FILL_COLOR,
-        "mud Sim": "#5f5f5f",
+        "wt exp": EXP_FILL_COLOR,
+        "wt sim": "#ffffff",
+        "mud exp": EXP_FILL_COLOR,
+        "mud sim": "#5f5f5f",
     }
 
-    fig, axes = plt.subplots(1, len(metric_specs), figsize=(11.0, 3.8))
+    fig, axes = plt.subplots(1, len(metric_specs), figsize=(11.0, 3.8), layout="constrained")
     for col_idx, (ax, (metric_key, title, unit, is_area)) in enumerate(zip(axes, metric_specs)):
         def vals(df: pd.DataFrame) -> np.ndarray:
             values = df[metric_key].astype(float).to_numpy()
             return values * AREA_SCALE if is_area else values
 
         groups = [
-            ("WT Exp", vals(exp_wt)),
-            ("WT Sim", vals(wt_runs)),
-            ("mud Exp", vals(exp_mud)),
-            ("mud Sim", vals(mud_runs)),
+            ("wt exp", vals(exp_wt)),
+            ("wt sim", vals(wt_runs)),
+            ("mud exp", vals(exp_mud)),
+            ("mud sim", vals(mud_runs)),
         ]
         make_boxplot_panel(ax, groups, title, unit, fill_map)
         ax.tick_params(axis="x", labelsize=FONT_SIZE_LABEL, pad=2)
@@ -279,7 +339,8 @@ def endpoint_metrics_panel(
         for label in ax.get_xticklabels():
             label.set_rotation(35)
             label.set_ha("right")
-    fig.subplots_adjust(left=0.06, right=0.995, top=0.92, bottom=0.28, wspace=0.45)
+            if "exp" in label.get_text():
+                label.set_color(EXP_MEDIAN_COLOR)
     return fig
 
 

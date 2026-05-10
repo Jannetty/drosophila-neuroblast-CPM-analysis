@@ -103,6 +103,11 @@ def main():
     ax.text(0.04, V_STAR + 0.04, "shared threshold V*",
             fontsize=FONT_SIZE_LABEL, va="bottom", color="#555555")
 
+    # Mutant threshold segments (all at V* in VCV=0 — fixed)
+    for t, v in mut0:
+        ax.plot([t[0], t[-1]], [v[-1], v[-1]],
+                color="#888888", linewidth=1.4, linestyle=(0, (3, 2, 1, 2)), alpha=0.95, zorder=2)
+
     for i, (t, v) in enumerate(wt0):
         ax.plot(t, v, label="WT NB  (asymm.)" if i == 0 else None, zorder=4, **WT_KW)
     draw_division_drop(ax, wt0, WT_FRAC_DIV, **WT_KW)
@@ -126,8 +131,10 @@ def main():
     handles, _ = ax.get_legend_handles_labels()
     ax.legend(handles=handles + [division_marker], loc="lower left", fontsize=FONT_SIZE_LABEL, frameon=False)
 
-    ax.text(mut0[-1][0][-1] + 0.05, V_STAR, "mutant threshold\nstays constant",
-            fontsize=FONT_SIZE_LABEL, va="center", ha="left", color="#cc4444")
+    label_x = (mut0[-1][0][0] + mut0[-1][0][-1]) / 2 + 0.10
+    ax.text(label_x, V_STAR - 0.01, "mutant threshold\nstays constant",
+            fontsize=FONT_SIZE_LABEL, va="top", ha="center", color="#555555",
+            bbox=dict(facecolor="white", edgecolor="none", pad=2), zorder=6)
 
     # ============================================================
     # Right: VCV = 1
@@ -142,7 +149,7 @@ def main():
     # Mutant threshold line first (stair-step down)
     for t, v in mut1:
         ax.plot([t[0], t[-1]], [v[-1], v[-1]],
-                color="#cc4444", linewidth=1.4, linestyle=":", alpha=0.95, zorder=2)
+                color="#888888", linewidth=1.4, linestyle=(0, (3, 2, 1, 2)), alpha=0.95, zorder=2)
     # WT threshold line (single horizontal line at V*)
     wt1_xmax = wt1[-1][0][-1]
     ax.plot([0, wt1_xmax], [V_STAR, V_STAR], **THRESHOLD_KW, zorder=2)
@@ -158,9 +165,11 @@ def main():
     # Threshold labels
     ax.text(wt1_xmax + 0.05, V_STAR, "WT threshold\n(stable)",
             fontsize=FONT_SIZE_LABEL, va="center", ha="left", color="#555555")
-    last_mut = mut1[-1]
-    ax.text(last_mut[0][-1] + 0.05, last_mut[1][-1], "mutant threshold falls\neach symmetric division",
-            fontsize=FONT_SIZE_LABEL, va="center", ha="left", color="#cc4444")
+    second_div_t = mut1[1][0][-1]
+    second_div_v = mut1[1][1][-1]
+    ax.text(second_div_t + 0.04, second_div_v + 0.02,
+            "mutant threshold falls\neach symmetric division",
+            fontsize=FONT_SIZE_LABEL, va="top", ha="left", color="#555555")
 
     ax.set_title("VCV = 1    threshold scales with birth size", fontsize=FONT_SIZE_TITLE, pad=10)
     ax.set_xlabel("time")
@@ -169,10 +178,7 @@ def main():
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    handles, _ = ax.get_legend_handles_labels()
-    ax.legend(handles=handles + [division_marker], loc="lower left", fontsize=FONT_SIZE_LABEL, frameon=False)
-
-    fig.tight_layout()
+    fig.tight_layout(w_pad=1.0)
 
     out_svg = FIG_DIR / "figure4_panel_a_draft.svg"
     out_png = FIG_DIR / "figure4_panel_a_draft.png"
