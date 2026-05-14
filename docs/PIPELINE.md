@@ -10,7 +10,7 @@ Design intent lives in `docs/plans/design_plans/`; this file describes reality.
 | Name | Value | Where it matters |
 |---|---|---|
 | `canvas_size` | 200 | Both exp and sim preprocessing; all geo tensors are 200×200 |
-| `ds` | 0.3 µm/px | Exp preprocessing only; controls Voronoi raster resolution |
+| `ds` | 0.3 µm/px | Exp preprocessing only; controls raster pixel size |
 | NB / dpn color | `#8e77b5` | Exp and sim visualization |
 | Pros / pop2 color | `#259eae` | Exp and sim visualization |
 | Pop3 color | `#1a7a8a` | Sim raw (`--all-pops`) only |
@@ -78,9 +78,14 @@ analysis NPZ and from `lineage_index.csv`. They appear in
 1. PCA on the lineage hull vertices → mean, e1 (PC1), e2 (PC2).
 2. All vertices projected onto the e1–e2 plane.
 3. Convex hull of the projected lineage vertices, buffered by 0.5 × ds.
-4. Voronoi rasterization: each pixel inside the hull is assigned to the nearest
-   Dpn or Pros centroid (KDTree). Output: (200, 200, 2) float32 geo tensor,
-   channel 0 = Dpn territory, channel 1 = Pros territory.
+4. Sphere-weighted Voronoi rasterization (`sphere_voronoi_rasterize`): each
+   cell's 3D mesh volume is used to compute an equivalent sphere radius r_i =
+   (3V/(4π))^(1/3). Territory is assigned by additively weighted Voronoi —
+   argmin_i(‖p−c_i‖−r_i) in µm — giving larger cells proportionally more
+   area. Priority override: pixels inside any Dpn circle go to the nearest Dpn
+   cell; pixels inside only Pros circles (and outside all Dpn circles) go to
+   the nearest Pros cell. Output: (200, 200, 2) float32 geo tensor, channel 0
+   = Dpn territory, channel 1 = Pros territory.
 5. Pixel coordinates of centroids and the hull polygon are pre-computed at
    this step (in `_um_to_canvas_px`) and stored in the mesh NPZ. This prevents
    a ds mismatch between preprocessing and visualization.
@@ -118,6 +123,8 @@ data/exp/processed/
 | `dpn_centroids_2d_px` | (N_dpn, 2) | Dpn centroids in canvas pixels |
 | `pros_centroids_2d_px` | (N_pros, 2) | Pros centroids in canvas pixels |
 | `lin_poly_2d_px` | (P, 2) | Hull polygon in canvas pixels |
+| `dpn_volumes_um3` | (N_dpn,) | Dpn cell volumes in µm³ (abs of trimesh volume) |
+| `pros_volumes_um3` | (N_pros,) | Pros cell volumes in µm³ (abs of trimesh volume) |
 | `pca_mean` | (3,) | PCA mean (3D) |
 | `pca_e1`, `pca_e2` | (3,) | PC1 and PC2 axes |
 | `ds` | scalar | Voxel size used for this lineage (µm) |
@@ -164,8 +171,8 @@ Three views:
 | View | Flag | What it shows |
 |---|---|---|
 | 3D mesh | `--view 3d` (default) | Interactive Plotly figure: lineage hull (grey, 15% opacity), Dpn cells (purple, opaque), Pros cells (teal, 50% opacity) |
-| 2D pre-Voronoi | `--view 2d-pre` | Matplotlib: centroid scatter on top of lineage hull polygon, coordinates in µm (PC1/PC2) |
-| 2D post-Voronoi | `--view 2d-post` | Matplotlib: Voronoi geo tensor as an RGB image with centroid dots overlaid in pixel coordinates |
+| 2D pre-rasterization | `--view 2d-pre` | Matplotlib: sphere circles (radius from cell volume) at projected centroid positions on lineage hull polygon, coordinates in µm (PC1/PC2) |
+| 2D post-rasterization | `--view 2d-post` | Matplotlib: geo tensor as an RGB image with centroid dots overlaid in pixel coordinates |
 
 The `2d-post` view reads `geo` from the analysis NPZ (via `analysis_row`), not
 from the mesh NPZ. This guarantees what you see is exactly what enters the
@@ -655,6 +662,93 @@ Default filenames encode the mode, fixed selector, metric, and scale.
 --exp-summary  PATH   default: data/exp/processed/exp_summary.csv
 --out          PATH   optional explicit output image path
 ```
+
+---
+
+## Step 8 — Experimental NB connectivity (mudmut)
+
+**Run:** `python scripts/extract_exp_nb_connectivity.py [options]`
+
+**Source:** `src/npa/metrics.py` (`exp_nb_connectivity`), `scripts/extract_exp_nb_connectivity.py`
+
+### What it does
+
+For each mudmut lineage, loads the 3D NB meshes from the preprocessed mesh NPZ and
+determines whether all NB cells form a single connected component. Two NB cells are
+considered adjacent if the minimum surface-to-surface distance between their 3D meshes
+is ≤ `contact_threshold_um` (default 5.0 µm). Adjacency is tested pairwise using
+`trimesh.proximity.closest_point`; the resulting adjacency graph is checked for
+connectedness with `scipy.sparse.csgraph.connected_components`.
+
+**Why 5.0 µm:** Dpn (Deadpan) is a nuclear marker, so the segmented meshes reflect
+nucleus position rather than full cell extent. Two cells whose nuclei are up to ~5 µm
+apart are likely touching at the cell-body level. This threshold was calibrated by
+inspecting surface distances across all disconnected mudmut lineages and choosing a
+value that captures biologically plausible nuclear-marker gaps while excluding clear
+separations (> 5 µm).
+
+Lineages with `n_dpn == 1` are trivially connected (no pairwise query performed).
+
+### Input
+
+- `data/exp/processed/lineage_index.csv` — lineage index (mudmut rows only)
+- `data/exp/processed/meshes/mudmut/{lobe}_{lineage_idx}.npz` — mesh NPZs
+
+### Output
+
+`data/exp/processed/exp_nb_connectivity.csv`
+
+**Columns:** `lineage_id, genotype, n_dpn, nb_connected, nb_n_components, nb_n_dpn`
+
+| Column | Description |
+|---|---|
+| `lineage_id` | Global lineage ID (joins to `lineage_index.csv`) |
+| `genotype` | Always `mudmut` |
+| `n_dpn` | From `lineage_index.csv` |
+| `nb_connected` | `True` if all NBs form one component |
+| `nb_n_components` | Number of connected NB components |
+| `nb_n_dpn` | NB count as seen by the function (cross-check against `n_dpn`) |
+
+### CLI options
+
+```
+--proc-dir  PATH   default: data/exp/processed
+```
+
+### Analysis
+
+Results are visualised in `docs/tex_draft/figure5_paper_figures.ipynb` (final section:
+"Experimental mudmut NB connectivity"). Key result at the current threshold: 54/59
+lineages (91.5%, 95% Wilson CI [81.6%, 96.3%]) have all NBs connected.
+
+---
+
+## Geometry-decoupling sweep conditions (figure 2)
+
+The decoupling sweep lives at `data/sim/decoupling/` and is preprocessed with:
+
+```
+make summarize-decouple
+```
+
+which runs `preprocess_sim.py --sweep-root data/sim/decoupling --out-dir data/sim/processed_decoupling` followed by metric extraction and summarization.
+
+The sweep explores four axes of geometry variation at `sim_id = vcv1_noreg` (VCV enabled):
+
+| Sweep axis | Variable | Conditions |
+|---|---|---|
+| Apical axis reorientation | `div_mean` (relrot) | `wt_divMean0Stdev26`, `wt_divMean0Stdev26_relrot`, `wt_divMean45Stdev26_relrot`, `wt_divMean90Stdev26_relrot` |
+| Spindle orientation range | `div_stdev` | `wt_divMean0Stdev26`, `wt_divMean0Stdev35`, `wt_divMean0Stdev45`, `wt_divMean0Stdev60`, `wt_divMean0Stdev75`, `wt_divMean0Stdev90` |
+| Offset shift | `y_offset` | `wt_divMean0Stdev26` (86%), `wt_divMean0Stdev26_yoffset50` (50%), `wt_divMean0Stdev26_yoffset22` (22%), `wt_divMean0Stdev26_yoffset7` (7%) |
+| Differentiation rule | GMC/NB identity rule at `y_offset=50%` | `wt_divMean0Stdev26_yoffset50` (basal GMC, default), `wt_divMean0Stdev26_yoffset50_randomnb` (random NB), `wt_divMean0Stdev26_yoffset50_apicalgmc` (apical GMC) |
+
+Offset-shift and differentiation-rule conditions use a larger simulation canvas
+than the 200×200 default. `decoupling_canvas_size()` in the notebook reads the
+canvas size from each condition's sim config JSON.  Larger-canvas snapshots are
+downsampled by factor 2 before cropping for display in the geometry-examples panel.
+
+Counterfactual conditions (`*_counterfactual`) use `sim_id = vcv0_noreg` and are
+visualised in the supplementary counterfactual figure only.
 
 ---
 
