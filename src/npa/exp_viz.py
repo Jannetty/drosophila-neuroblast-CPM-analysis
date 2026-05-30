@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from matplotlib.patches import Circle as MplCircle
 from matplotlib.patches import Polygon as PolygonPatch
 
 from npa.colors import NB_COLOR as DPN_COLOR, PROS_COLOR, EXP_HULL_COLOR as HULL_COLOR
@@ -124,6 +125,10 @@ def show_3d(mesh: dict, row: dict) -> None:
     fig.show()
 
 
+def _sphere_radius_um(volume_um3: float) -> float:
+    return (3.0 * float(volume_um3) / (4.0 * np.pi)) ** (1.0 / 3.0)
+
+
 def show_2d_pre(mesh: dict, row: dict) -> None:
     fig, ax = plt.subplots(figsize=(7, 7))
     lin_poly_2d = np.asarray(mesh["lin_poly_2d"], dtype=np.float32)
@@ -137,12 +142,21 @@ def show_2d_pre(mesh: dict, row: dict) -> None:
             alpha=0.2,
         )
     )
-    dpn_centroids = np.asarray(mesh["dpn_centroids_2d"], dtype=np.float32)
-    pros_centroids = np.asarray(mesh["pros_centroids_2d"], dtype=np.float32)
-    if len(dpn_centroids) > 0:
-        ax.scatter(dpn_centroids[:, 0], dpn_centroids[:, 1], c=DPN_COLOR, zorder=3)
-    if len(pros_centroids) > 0:
-        ax.scatter(pros_centroids[:, 0], pros_centroids[:, 1], c=PROS_COLOR, zorder=2)
+    dpn_centroids = np.asarray(mesh["dpn_centroids_2d"], dtype=np.float32).reshape(-1, 2)
+    pros_centroids = np.asarray(mesh["pros_centroids_2d"], dtype=np.float32).reshape(-1, 2)
+    dpn_vols  = np.asarray(mesh.get("dpn_volumes_um3",  np.zeros(len(dpn_centroids))),  dtype=np.float64).ravel()
+    pros_vols = np.asarray(mesh.get("pros_volumes_um3", np.zeros(len(pros_centroids))), dtype=np.float64).ravel()
+
+    for (cx, cy), vol in zip(pros_centroids, pros_vols):
+        r = _sphere_radius_um(vol)
+        ax.add_patch(MplCircle((cx, cy), r, color=PROS_COLOR, fill=True,  alpha=0.3, linewidth=0,   zorder=2))
+        ax.add_patch(MplCircle((cx, cy), r, color=PROS_COLOR, fill=False, linewidth=0.8,             zorder=2))
+    for (cx, cy), vol in zip(dpn_centroids, dpn_vols):
+        r = _sphere_radius_um(vol)
+        ax.add_patch(MplCircle((cx, cy), r, color=DPN_COLOR, fill=True,  alpha=0.4, linewidth=0,    zorder=3))
+        ax.add_patch(MplCircle((cx, cy), r, color=DPN_COLOR, fill=False, linewidth=0.8,              zorder=3))
+
+    ax.autoscale_view()
     ax.set_aspect("equal", adjustable="box")
     ax.set_xlabel("PC1 (µm)")
     ax.set_ylabel("PC2 (µm)")

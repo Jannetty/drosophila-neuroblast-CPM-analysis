@@ -10,9 +10,10 @@ import trimesh
 from npa.exp_preprocessing.geometry import (
     canvas_frame_from_polygon,
     hull_polygon,
+    mesh_polygon,
     pca_axes,
     project_2d,
-    voronoi_rasterize,
+    sphere_voronoi_rasterize,
 )
 from npa.exp_preprocessing.lineage_filter import (
     ExpFilteredLineage,
@@ -20,6 +21,12 @@ from npa.exp_preprocessing.lineage_filter import (
     ExpRejectedLineage,
     load_exp_filtered_lobe,
 )
+
+
+def _cell_volumes_um3(meshes: list[trimesh.Trimesh]) -> np.ndarray:
+    if not meshes:
+        return np.empty((0,), dtype=np.float32)
+    return np.asarray([abs(float(m.volume)) for m in meshes], dtype=np.float32)
 
 
 def _mesh_arrays(prefix: str, meshes: list[trimesh.Trimesh]) -> dict[str, np.ndarray]:
@@ -80,18 +87,24 @@ def process_exp_lineage(
     canvas_size: int = 200,
     *,
     compute_geo: bool = True,
+    use_convex_hull: bool = True,
 ) -> dict[str, Any]:
     """Process one filtered lineage and save its per-lineage mesh NPZ."""
     lin_vertices = np.asarray(lineage.lineage_mesh.vertices, dtype=np.float32)
     lin_faces = np.asarray(lineage.lineage_mesh.faces, dtype=np.int32)
     mean, e1, e2 = pca_axes(lin_vertices)
     lin_pts_2d = project_2d(lin_vertices, mean, e1, e2)
-    lin_poly = hull_polygon(lin_pts_2d, buffer_px=ds * 0.5)
+    if use_convex_hull:
+        lin_poly = hull_polygon(lin_pts_2d, buffer_px=ds * 0.5)
+    else:
+        lin_poly = mesh_polygon(lin_pts_2d, lin_faces, buffer_px=ds * 0.5)
 
     dpn_centroids_3d = _centroids_3d(lineage.dpn_meshes)
     pros_centroids_3d = _centroids_3d(lineage.pros_meshes)
     dpn_centroids_2d = _centroids_2d(lineage.dpn_meshes, mean, e1, e2)
     pros_centroids_2d = _centroids_2d(lineage.pros_meshes, mean, e1, e2)
+    dpn_volumes_um3 = _cell_volumes_um3(lineage.dpn_meshes)
+    pros_volumes_um3 = _cell_volumes_um3(lineage.pros_meshes)
     xmin, ymin, _, _, row0, col0 = canvas_frame_from_polygon(
         lin_poly=lin_poly,
         canvas_size=canvas_size,
@@ -123,10 +136,12 @@ def process_exp_lineage(
         col0=col0,
     )
     if compute_geo:
-        geo = voronoi_rasterize(
+        geo = sphere_voronoi_rasterize(
             lin_poly,
             dpn_centroids_2d,
             pros_centroids_2d,
+            dpn_volumes_um3,
+            pros_volumes_um3,
             canvas_size=canvas_size,
             ds=ds,
         )
@@ -156,6 +171,8 @@ def process_exp_lineage(
         dpn_centroids_2d_px=dpn_centroids_2d_px,
         pros_centroids_2d_px=pros_centroids_2d_px,
         lin_poly_2d_px=lin_poly_2d_px,
+        dpn_volumes_um3=dpn_volumes_um3,
+        pros_volumes_um3=pros_volumes_um3,
         ds=np.asarray(ds, dtype=np.float32),
         pca_mean=mean.astype(np.float32),
         pca_e1=e1.astype(np.float32),
@@ -186,6 +203,7 @@ def process_exp_lobe(
     lineage_id_start: int = 0,
     ds: float = 0.3,
     canvas_size: int = 200,
+    use_convex_hull: bool = True,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], ExpFilteredLobe]:
     """Filter and process all kept lineages from one lobe."""
     filtered = load_exp_filtered_lobe(
@@ -208,6 +226,7 @@ def process_exp_lobe(
             ds=ds,
             canvas_size=canvas_size,
             compute_geo=True,
+            use_convex_hull=use_convex_hull,
         )
         record.update(
             {
@@ -228,6 +247,7 @@ def process_exp_lobe(
             ds=ds,
             canvas_size=canvas_size,
             compute_geo=False,
+            use_convex_hull=use_convex_hull,
         )
         record.update(
             {

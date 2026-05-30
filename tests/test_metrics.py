@@ -15,6 +15,7 @@ from npa.metrics import (
     SIM_SUMMARY_COLUMNS,
     _condition_metadata,
     build_selected_sim_metrics,
+    exp_nb_connectivity,
     extract_exp_metrics,
     extract_sim_timepoint_metrics,
     nb_connectivity,
@@ -454,3 +455,55 @@ def test_nb_connectivity_l_shaped_blob_is_connected() -> None:
     r = nb_connectivity(geo)
     assert r["nb_connected"] is True
     assert r["nb_n_components"] == 1
+
+
+# ── exp_nb_connectivity tests ────────────────────────────────────────────────
+
+
+def _box_mesh_dict(translations: list[tuple[float, float, float]], size: float = 2.0) -> dict:
+    """Build a mesh dict with one dpn box per translation, all size×size×size µm."""
+    import trimesh
+    result = {}
+    for i, t in enumerate(translations):
+        box = trimesh.creation.box(extents=[size, size, size])
+        box.apply_translation(t)
+        result[f"dpn_{i}_vertices"] = box.vertices.astype(np.float32)
+        result[f"dpn_{i}_faces"] = box.faces.astype(np.int32)
+    return result
+
+
+def test_exp_nb_connectivity_single_nb() -> None:
+    mesh = _box_mesh_dict([(0.0, 0.0, 0.0)])
+    r = exp_nb_connectivity(mesh)
+    assert r["nb_connected"] is True
+    assert r["nb_n_components"] == 1
+    assert r["nb_n_dpn"] == 1
+
+
+def test_exp_nb_connectivity_touching() -> None:
+    # Box A: x in [-1, 1]; Box B: x in [1, 3] — faces share x=1, distance = 0.
+    mesh = _box_mesh_dict([(0.0, 0.0, 0.0), (2.0, 0.0, 0.0)])
+    r = exp_nb_connectivity(mesh)
+    assert r["nb_connected"] is True
+    assert r["nb_n_components"] == 1
+    assert r["nb_n_dpn"] == 2
+
+
+def test_exp_nb_connectivity_separated() -> None:
+    # Box A: x in [-1, 1]; Box B: x in [11, 13] — surface distance = 10 µm > 5 µm threshold.
+    mesh = _box_mesh_dict([(0.0, 0.0, 0.0), (12.0, 0.0, 0.0)])
+    r = exp_nb_connectivity(mesh)
+    assert r["nb_connected"] is False
+    assert r["nb_n_components"] == 2
+    assert r["nb_n_dpn"] == 2
+
+
+def test_exp_nb_connectivity_chain() -> None:
+    # A: x in [-1,1]; B: x in [1,3]; C: x in [3,5].
+    # A-B distance = 0 (adjacent); B-C distance = 0 (adjacent); A-C distance = 2 µm (not adjacent).
+    # Graph is still one connected component via A-B-C.
+    mesh = _box_mesh_dict([(0.0, 0.0, 0.0), (2.0, 0.0, 0.0), (4.0, 0.0, 0.0)])
+    r = exp_nb_connectivity(mesh)
+    assert r["nb_connected"] is True
+    assert r["nb_n_components"] == 1
+    assert r["nb_n_dpn"] == 3

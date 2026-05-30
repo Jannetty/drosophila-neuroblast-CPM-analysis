@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-from scipy.spatial import KDTree
 from shapely.geometry import MultiPoint, Point, Polygon
+from shapely.ops import unary_union
 from shapely.prepared import prep
 
 
@@ -51,18 +51,46 @@ def hull_polygon(pts_2d: np.ndarray, buffer_px: float = 0.0) -> Polygon:
     return polygon
 
 
-def _centroid_stack(
-    dpn_centroids_2d: np.ndarray,
-    pros_centroids_2d: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray]:
-    dpn = np.asarray(dpn_centroids_2d, dtype=np.float32).reshape(-1, 2)
-    pros = np.asarray(pros_centroids_2d, dtype=np.float32).reshape(-1, 2)
-    if len(dpn) + len(pros) == 0:
-        raise ValueError("at least one cell centroid is required")
-    centroids = np.vstack([dpn, pros]).astype(np.float32)
-    is_dpn = np.zeros(len(centroids), dtype=bool)
-    is_dpn[: len(dpn)] = True
-    return centroids, is_dpn
+
+def mesh_polygon(
+    pts_2d: np.ndarray,
+    faces: np.ndarray,
+    buffer_px: float = 0.0,
+) -> Polygon:
+    """Build a connected non-convex polygon from projected mesh triangles.
+
+    Takes the unary_union of all valid (non-degenerate) projected triangle
+    faces and applies a buffer. Falls back to convex hull if the union is
+    not a single Polygon (e.g. disconnected projection).
+    """
+    pts_2d = np.asarray(pts_2d, dtype=np.float32)
+    faces = np.asarray(faces, dtype=np.int32)
+    if pts_2d.ndim != 2 or pts_2d.shape[1] != 2 or len(pts_2d) < 3:
+        raise ValueError("pts_2d must have shape (M, 2) with M >= 3")
+    if faces.ndim != 2 or faces.shape[1] != 3 or len(faces) < 1:
+        raise ValueError("faces must have shape (F, 3) with F >= 1")
+
+    tris = []
+    for tri in faces:
+        p = Polygon(pts_2d[tri])
+        if p.is_valid and p.area > 0:
+            tris.append(p)
+
+    if not tris:
+        raise ValueError("no valid projected triangles to form mesh polygon")
+
+    polygon = unary_union(tris)
+
+    if buffer_px > 0:
+        polygon = polygon.buffer(buffer_px).buffer(0)
+
+    if polygon.is_empty or polygon.area == 0:
+        raise ValueError("mesh polygon is empty after union/buffer")
+
+    if not isinstance(polygon, Polygon):
+        polygon = polygon.convex_hull
+
+    return polygon
 
 
 def canvas_frame_from_polygon(
@@ -99,48 +127,92 @@ def canvas_frame_from_polygon(
     return xmin, ymin, nx, ny, row0, col0
 
 
-def voronoi_rasterize(
+
+def sphere_voronoi_rasterize(
     lin_poly: Polygon,
     dpn_centroids_2d: np.ndarray,
     pros_centroids_2d: np.ndarray,
+    dpn_volumes_um3: np.ndarray,
+    pros_volumes_um3: np.ndarray,
     canvas_size: int,
     ds: float,
 ) -> np.ndarray:
     """
-    Rasterize the lineage polygon and assign each inside pixel to the nearest
-    Dpn or Pros centroid.
+    Rasterize lineage polygon using additively weighted Voronoi seeded by sphere
+    radii derived from 3D cell volumes.
+
+    Priority (applied in order):
+      1. Pixels inside any Dpn circle → nearest Dpn center wins
+      2. Pixels inside only Pros circles → nearest Pros center wins
+      3. All remaining hull pixels → argmin(||p − c_i|| − r_i) across all cells
+
+    Returns (canvas_size, canvas_size, 2) float32: ch0=Dpn, ch1=Pros territory.
     """
-    centroids, is_dpn = _centroid_stack(dpn_centroids_2d, pros_centroids_2d)
-    xmin, ymin, nx, ny, row0, col0 = canvas_frame_from_polygon(
-        lin_poly=lin_poly,
-        canvas_size=canvas_size,
-        ds=ds,
-    )
+    xmin, ymin, nx, ny, row0, col0 = canvas_frame_from_polygon(lin_poly, canvas_size, ds)
 
-    xs = xmin + (np.arange(nx, dtype=np.float32) + 0.5) * ds
-    ys = ymin + (np.arange(ny, dtype=np.float32) + 0.5) * ds
-    grid_x, grid_y = np.meshgrid(xs, ys)
-    points = np.column_stack([grid_x.ravel(), grid_y.ravel()])
+    xs = xmin + (np.arange(nx, dtype=np.float64) + 0.5) * ds  # (nx,) x coords in µm
+    ys = ymin + (np.arange(ny, dtype=np.float64) + 0.5) * ds  # (ny,) y coords in µm
+    GX, GY = np.meshgrid(xs, ys)                              # both (ny, nx)
 
-    prepared = prep(lin_poly)
-    inside = np.fromiter(
-        (prepared.contains(Point(float(x), float(y))) for x, y in points),
+    dpn_c  = np.asarray(dpn_centroids_2d,  dtype=np.float64).reshape(-1, 2)
+    pros_c = np.asarray(pros_centroids_2d, dtype=np.float64).reshape(-1, 2)
+    n_dpn  = len(dpn_c)
+    n_pros = len(pros_c)
+
+    def _radii_um(vols: np.ndarray) -> np.ndarray:
+        v = np.asarray(vols, dtype=np.float64).ravel()
+        return (3.0 * v / (4.0 * np.pi)) ** (1.0 / 3.0)
+
+    def _aw_dist(centroids: np.ndarray, radii_um: np.ndarray) -> np.ndarray:
+        # Returns (n_cells, ny, nx) in µm; negative value means pixel is inside circle
+        return np.stack(
+            [np.sqrt((GX - cx) ** 2 + (GY - cy) ** 2) - r
+             for (cx, cy), r in zip(centroids, radii_um)],
+            axis=0,
+        )
+
+    if n_dpn:
+        dpn_dw     = _aw_dist(dpn_c,  _radii_um(dpn_volumes_um3))   # (n_dpn, ny, nx)
+        inside_dpn = dpn_dw.min(axis=0) < 0
+    else:
+        dpn_dw     = None
+        inside_dpn = np.zeros((ny, nx), dtype=bool)
+
+    if n_pros:
+        pros_dw     = _aw_dist(pros_c, _radii_um(pros_volumes_um3))  # (n_pros, ny, nx)
+        inside_pros = pros_dw.min(axis=0) < 0
+    else:
+        pros_dw     = None
+        inside_pros = np.zeros((ny, nx), dtype=bool)
+
+    # Global additively weighted Voronoi — used for pixels outside all circles
+    if n_dpn and n_pros:
+        all_dw = np.concatenate([dpn_dw, pros_dw], axis=0)
+        global_nearest_is_dpn = all_dw.argmin(axis=0) < n_dpn
+    elif n_dpn:
+        global_nearest_is_dpn = np.ones((ny, nx), dtype=bool)
+    else:
+        global_nearest_is_dpn = np.zeros((ny, nx), dtype=bool)
+
+    # Priority assignment
+    is_dpn_px = global_nearest_is_dpn.copy()
+    is_dpn_px[inside_dpn] = True
+    is_dpn_px[inside_pros & ~inside_dpn] = False
+
+    # Hull mask
+    points = np.column_stack([GX.ravel(), GY.ravel()])
+    prepared_poly = prep(lin_poly)
+    hull_mask = np.fromiter(
+        (prepared_poly.contains(Point(float(x), float(y))) for x, y in points),
         dtype=bool,
         count=len(points),
-    )
-    if not inside.any():
+    ).reshape(ny, nx)
+
+    if not hull_mask.any():
         raise ValueError("lineage polygon did not cover any raster pixels")
 
-    tree = KDTree(centroids)
-    inside_points = points[inside]
-    _, nearest = tree.query(inside_points)
-
-    flat_y, flat_x = np.where(inside.reshape(ny, nx))
-    dpn_mask = np.zeros((ny, nx), dtype=np.float32)
-    pros_mask = np.zeros((ny, nx), dtype=np.float32)
-    nearest_is_dpn = is_dpn[nearest]
-    dpn_mask[flat_y[nearest_is_dpn], flat_x[nearest_is_dpn]] = 1.0
-    pros_mask[flat_y[~nearest_is_dpn], flat_x[~nearest_is_dpn]] = 1.0
+    dpn_mask  = (is_dpn_px  & hull_mask).astype(np.float32)
+    pros_mask = (~is_dpn_px & hull_mask).astype(np.float32)
 
     geo = np.zeros((canvas_size, canvas_size, 2), dtype=np.float32)
     geo[row0 : row0 + ny, col0 : col0 + nx, 0] = dpn_mask

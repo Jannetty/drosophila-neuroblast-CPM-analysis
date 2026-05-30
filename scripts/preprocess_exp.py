@@ -22,11 +22,11 @@ GENOTYPE_ALIASES = {
 
 GENOTYPE_SPECS = {
     "wt": {
-        "folder": "Control",
+        "folder": "wt",
         "token": "control",
     },
     "mudmut": {
-        "folder": "Mud",
+        "folder": "mudmut",
         "token": "mud",
     },
     "nanobody": {
@@ -108,6 +108,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lobes", nargs="+", default=None)
     parser.add_argument("--ds", type=float, default=0.3)
     parser.add_argument("--canvas-size", type=int, default=200)
+    parser.add_argument(
+        "--no-convex-hull",
+        action="store_true",
+        default=False,
+        help="Use projected mesh-triangle union instead of convex hull for lineage boundary.",
+    )
     return parser.parse_args()
 
 
@@ -150,6 +156,7 @@ def main() -> None:
             lineage_id_start=lineage_id_next,
             ds=args.ds,
             canvas_size=args.canvas_size,
+            use_convex_hull=not args.no_convex_hull,
         )
         for record in records:
             record["mesh_path"] = display_path(Path(record["mesh_path"]))

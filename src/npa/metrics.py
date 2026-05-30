@@ -614,6 +614,72 @@ def nb_connectivity(geo: np.ndarray) -> dict[str, Any]:
     }
 
 
+def exp_nb_connectivity(mesh: dict, contact_threshold_um: float = 5.0) -> dict[str, Any]:
+    """
+    Connected-component analysis of NB cells in one experimental lineage.
+
+    Two NB meshes are considered adjacent if the minimum surface-to-surface
+    distance between them is <= contact_threshold_um.
+
+    Default threshold (5.0 µm): Dpn is a nuclear marker, so the segmented mesh
+    reflects nucleus position, not full cell extent. Two cells whose nuclei are
+    up to ~5 µm apart are likely touching at the cell level. This threshold was
+    set by inspecting the pairwise surface distances across all disconnected mudmut
+    lineages and choosing a value that captures biologically plausible contacts
+    (gaps < one cell diameter) while excluding clearly separated pairs (> 5 µm).
+
+    Parameters
+    ----------
+    mesh : dict
+        Contents of a lineage .npz (keys dpn_{i}_vertices, dpn_{i}_faces, ...).
+    contact_threshold_um : float
+        Max surface-to-surface distance (µm) to count two NBs as adjacent.
+
+    Returns
+    -------
+    dict with keys:
+        nb_connected     : bool
+        nb_n_components  : int
+        nb_n_dpn         : int
+    """
+    import trimesh
+    from scipy.sparse.csgraph import connected_components
+    from scipy.sparse import csr_matrix
+
+    i = 0
+    meshes = []
+    while f"dpn_{i}_vertices" in mesh:
+        m = trimesh.Trimesh(
+            vertices=mesh[f"dpn_{i}_vertices"],
+            faces=mesh[f"dpn_{i}_faces"],
+            process=False,
+        )
+        meshes.append(m)
+        i += 1
+
+    n = len(meshes)
+    if n == 0:
+        return {"nb_connected": False, "nb_n_components": 0, "nb_n_dpn": 0}
+    if n == 1:
+        return {"nb_connected": True, "nb_n_components": 1, "nb_n_dpn": 1}
+
+    adj = [[False] * n for _ in range(n)]
+    for a in range(n):
+        for b in range(a + 1, n):
+            _, dists, _ = trimesh.proximity.closest_point(meshes[b], meshes[a].vertices)
+            min_dist = float(dists.min())
+            if min_dist <= contact_threshold_um:
+                adj[a][b] = adj[b][a] = True
+
+    mat = csr_matrix([[1 if v else 0 for v in row] for row in adj])
+    n_comp, _ = connected_components(mat, directed=False)
+    return {
+        "nb_connected": n_comp == 1,
+        "nb_n_components": int(n_comp),
+        "nb_n_dpn": n,
+    }
+
+
 def write_exp_metrics_csv(df: pd.DataFrame, out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_path, columns=EXP_METRIC_COLUMNS, index=False)

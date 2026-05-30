@@ -3,13 +3,16 @@ from pathlib import Path
 import numpy as np
 import pytest
 import trimesh
+from shapely.geometry import MultiPoint
+from shapely.geometry import Polygon as ShapelyPolygon
 from shapely.geometry import box
 
 from npa.exp_preprocessing.geometry import (
     hull_polygon,
+    mesh_polygon,
     pca_axes,
     project_2d,
-    voronoi_rasterize,
+    sphere_voronoi_rasterize,
 )
 from npa.exp_preprocessing.lineage_filter import (
     ExpFilteredLineage,
@@ -134,10 +137,12 @@ def test_geometry_rasterization_channels_and_canvas_error() -> None:
     pts_2d = project_2d(vertices, mean, e1, e2)
     poly = hull_polygon(pts_2d, buffer_px=0.0)
 
-    geo = voronoi_rasterize(
+    geo = sphere_voronoi_rasterize(
         poly,
         dpn_centroids_2d=np.array([[-1.0, 0.0]], dtype=np.float32),
         pros_centroids_2d=np.array([[1.0, 0.0]], dtype=np.float32),
+        dpn_volumes_um3=np.array([10.0], dtype=np.float32),
+        pros_volumes_um3=np.array([10.0], dtype=np.float32),
         canvas_size=20,
         ds=0.5,
     )
@@ -148,10 +153,91 @@ def test_geometry_rasterization_channels_and_canvas_error() -> None:
     assert geo.sum() > 0
 
     with pytest.raises(ValueError, match="exceeds canvas"):
-        voronoi_rasterize(
+        sphere_voronoi_rasterize(
             box(0, 0, 10, 10),
             dpn_centroids_2d=np.array([[1.0, 1.0]], dtype=np.float32),
             pros_centroids_2d=np.empty((0, 2), dtype=np.float32),
+            dpn_volumes_um3=np.array([1.0], dtype=np.float32),
+            pros_volumes_um3=np.empty((0,), dtype=np.float32),
+            canvas_size=4,
+            ds=1.0,
+        )
+
+
+def test_sphere_voronoi_rasterize_basic() -> None:
+    vertices = np.array(
+        [[0, 0, 0], [4, 0, 0], [4, 4, 0], [0, 4, 0], [2, 2, 1]],
+        dtype=np.float32,
+    )
+    mean, e1, e2 = pca_axes(vertices)
+    pts_2d = project_2d(vertices, mean, e1, e2)
+    poly = hull_polygon(pts_2d, buffer_px=0.0)
+
+    # Equal volumes → result should be near the plain-Voronoi split
+    geo = sphere_voronoi_rasterize(
+        poly,
+        dpn_centroids_2d=np.array([[-1.0, 0.0]], dtype=np.float32),
+        pros_centroids_2d=np.array([[1.0, 0.0]], dtype=np.float32),
+        dpn_volumes_um3=np.array([10.0], dtype=np.float32),
+        pros_volumes_um3=np.array([10.0], dtype=np.float32),
+        canvas_size=20,
+        ds=0.5,
+    )
+
+    assert geo.shape == (20, 20, 2)
+    assert geo.dtype == np.float32
+    assert np.logical_and(geo[..., 0] > 0, geo[..., 1] > 0).sum() == 0
+    assert geo.sum() > 0
+
+
+def test_sphere_voronoi_nb_priority() -> None:
+    # NB centroid at (5, 5) with large volume (r ≈ 3.6 µm).
+    # Pros centroid at (5.1, 5) — only 0.1 µm away from NB center, so the
+    # Pros centroid is geometrically closer to the center pixel, but the
+    # center pixel is inside the NB circle → NB must win.
+    poly = box(0, 0, 10, 10)
+    geo = sphere_voronoi_rasterize(
+        poly,
+        dpn_centroids_2d=np.array([[5.0, 5.0]], dtype=np.float32),
+        pros_centroids_2d=np.array([[5.1, 5.0]], dtype=np.float32),
+        dpn_volumes_um3=np.array([200.0], dtype=np.float32),
+        pros_volumes_um3=np.array([1.0], dtype=np.float32),
+        canvas_size=50,
+        ds=0.25,
+    )
+
+    # Pixel closest to canvas center should be NB territory
+    cy, cx = geo.shape[0] // 2, geo.shape[1] // 2
+    assert geo[cy, cx, 0] == 1.0, "center pixel must be NB territory"
+    assert geo[cy, cx, 1] == 0.0
+
+
+def test_sphere_voronoi_larger_cell_claims_more() -> None:
+    # NB at left, Pros at right, NB has 8× the volume.
+    # NB must claim more hull pixels than Pros.
+    poly = box(0, 0, 10, 10)
+    geo = sphere_voronoi_rasterize(
+        poly,
+        dpn_centroids_2d=np.array([[2.5, 5.0]], dtype=np.float32),
+        pros_centroids_2d=np.array([[7.5, 5.0]], dtype=np.float32),
+        dpn_volumes_um3=np.array([800.0], dtype=np.float32),
+        pros_volumes_um3=np.array([100.0], dtype=np.float32),
+        canvas_size=50,
+        ds=0.25,
+    )
+
+    assert np.logical_and(geo[..., 0] > 0, geo[..., 1] > 0).sum() == 0
+    assert geo[..., 0].sum() > geo[..., 1].sum(), "larger NB volume must claim more pixels"
+
+
+def test_sphere_voronoi_canvas_exceeded() -> None:
+    with pytest.raises(ValueError, match="exceeds canvas"):
+        sphere_voronoi_rasterize(
+            box(0, 0, 10, 10),
+            dpn_centroids_2d=np.array([[1.0, 1.0]], dtype=np.float32),
+            pros_centroids_2d=np.empty((0, 2), dtype=np.float32),
+            dpn_volumes_um3=np.array([1.0], dtype=np.float32),
+            pros_volumes_um3=np.empty((0,), dtype=np.float32),
             canvas_size=4,
             ds=1.0,
         )
@@ -348,4 +434,51 @@ def test_process_exp_lineage_allows_empty_centroids_when_mesh_only(tmp_path: Pat
         assert data["pros_centroids_2d"].shape == (0, 2)
         assert data["dpn_centroids_2d_px"].shape == (0, 2)
         assert data["pros_centroids_2d_px"].shape == (0, 2)
+
+
+# --- mesh_polygon tests ---
+
+
+def test_mesh_polygon_basic() -> None:
+    # L-shaped face set: two rectangles sharing a corner vertex.
+    # pts form an L; convex hull would add the upper-right corner region.
+    pts_2d = np.array(
+        [[0, 0], [4, 0], [4, 2], [0, 2], [0, 4], [2, 4]], dtype=np.float32
+    )
+    faces = np.array([[0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 5]], dtype=np.int32)
+    poly = mesh_polygon(pts_2d, faces, buffer_px=0.0)
+    assert isinstance(poly, ShapelyPolygon)
+    assert poly.is_valid
+    assert poly.area > 0
+    ch = MultiPoint(pts_2d).convex_hull
+    assert poly.area <= ch.area
+
+
+def test_mesh_polygon_buffer() -> None:
+    # Square split into two triangles — buffer should produce a valid Polygon.
+    pts_2d = np.array([[0, 0], [2, 0], [2, 2], [0, 2]], dtype=np.float32)
+    faces = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int32)
+    poly = mesh_polygon(pts_2d, faces, buffer_px=0.1)
+    assert isinstance(poly, ShapelyPolygon)
+    assert poly.area > 0
+
+
+def test_mesh_polygon_degenerate_faces_ignored() -> None:
+    # Mix of valid triangles and a degenerate collinear face; should not raise.
+    pts_2d = np.array(
+        [[0, 0], [4, 0], [4, 4], [0, 4], [2, 2], [2, 0]], dtype=np.float32
+    )
+    # [0,1,5] has all y<=0 with (0,0),(4,0),(2,0) — area == 0, degenerate
+    faces = np.array([[0, 1, 2], [0, 2, 3], [0, 4, 5], [0, 1, 5]], dtype=np.int32)
+    poly = mesh_polygon(pts_2d, faces, buffer_px=0.0)
+    assert poly.is_valid
+    assert poly.area > 0
+
+
+def test_mesh_polygon_bad_inputs() -> None:
+    # All faces project to the same point → zero area → no valid triangles
+    pts_2d = np.zeros((3, 2), dtype=np.float32)
+    faces = np.zeros((1, 3), dtype=np.int32)
+    with pytest.raises(ValueError, match="no valid projected triangles"):
+        mesh_polygon(pts_2d, faces, buffer_px=0.0)
 
