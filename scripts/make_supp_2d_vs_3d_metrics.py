@@ -27,6 +27,16 @@ GENOTYPES = ["wt", "mudmut"]
 DIM2D_COLOR = "#4C72B0"
 DIM3D_COLOR = "#DD8452"
 
+def load_2d_metrics(proc_dir: Path) -> pd.DataFrame:
+    df = pd.read_csv(proc_dir / "metrics.csv")
+    df = df[df["genotype"].isin(GENOTYPES)].copy()
+    ds = df["ds"].values
+    df["dpn_area"] = df["dpn_area_vox"] * ds * ds
+    df["avg_dpn_area"] = df["avg_dpn_area_vox"] * ds * ds
+    df["lin_area"] = df["lin_area_vox"] * ds * ds
+    return df[["lineage_id", "genotype", "n_dpn", "dpn_area", "avg_dpn_area", "lin_area", "n_pros"]].copy()
+
+
 METRICS = [
     ("n_dpn",        "# neuroblasts",           "fold-change from WT"),
     ("dpn_area",     "total NB area/vol",        "fold-change from WT"),
