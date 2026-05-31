@@ -130,13 +130,12 @@ def make_genotype_histogram_panel(
         lo, hi   = np.nanpercentile(all_vals, 2), np.nanpercentile(all_vals, 98)
         if hi <= lo:
             lo, hi = lo - 0.5, hi + 0.5
-        bins     = np.linspace(lo, hi, 20)
+        bins = np.linspace(lo, hi, 20)
 
         ax.hist(vals_2d, bins=bins, alpha=0.5, color=DIM2D_COLOR, edgecolor=DIM2D_COLOR,
                 linewidth=1.2, label="2D", density=True)
         ax.hist(vals_3d, bins=bins, facecolor="none", edgecolor=DIM3D_COLOR,
                 linewidth=1.5, hatch="///", label="3D", density=True)
-
         ax.axvline(1.0, color="gray", linestyle="--", linewidth=1.0)
         ax.set_xlabel("fold-change from WT mean", fontsize=FONT_SIZE_LABEL - 2)
         ax.set_title(title, fontsize=FONT_SIZE_LABEL)
@@ -148,6 +147,58 @@ def make_genotype_histogram_panel(
                        linewidth=1.5, label="3D (volume, µm³)"),
     ]
     axes[-1].legend(handles=handles, loc="upper right", fontsize=FONT_SIZE_LABEL - 3, frameon=False)
+
+    fig.tight_layout()
+    return fig
+
+
+def make_genotype_boxplot_panel(
+    df_2d: pd.DataFrame,
+    df_3d: pd.DataFrame,
+    genotype: str,
+) -> plt.Figure:
+    metric_cols = ["n_dpn", "dpn_area", "avg_dpn_area", "lin_area", "n_pros"]
+    metric_titles = [
+        "# neuroblasts\n(dpn)",
+        "total NB\narea / volume",
+        "avg NB area /\nvolume per cell",
+        "lineage\narea / volume",
+        "# non-neuroblasts\n(pros)",
+    ]
+    label = "WT" if genotype == "wt" else "mudmut"
+
+    fig, axes = plt.subplots(1, 5, figsize=(18, 4))
+    fig.suptitle(f"{label} lineages: 2D vs 3D representations", fontsize=FONT_SIZE_TITLE)
+
+    for ax, col, title in zip(axes, metric_cols, metric_titles):
+        wt_mean_2d = df_2d.loc[df_2d["genotype"] == "wt", col].mean()
+        wt_mean_3d = df_3d.loc[df_3d["genotype"] == "wt", col].mean()
+
+        vals_2d = (df_2d.loc[df_2d["genotype"] == genotype, col] / wt_mean_2d).values
+        vals_3d = (df_3d.loc[df_3d["genotype"] == genotype, col] / wt_mean_3d).values
+
+        bp = ax.boxplot(
+            [vals_2d, vals_3d],
+            labels=["2D", "3D"],
+            patch_artist=True,
+            widths=0.5,
+            medianprops=dict(color="black", linewidth=1.5),
+            whiskerprops=dict(linewidth=1.2),
+            capprops=dict(linewidth=1.2),
+            flierprops=dict(marker="o", markersize=3, linestyle="none", alpha=0.5),
+        )
+        bp["boxes"][0].set_facecolor(DIM2D_COLOR)
+        bp["boxes"][0].set_alpha(0.6)
+        bp["boxes"][1].set_facecolor(DIM3D_COLOR)
+        bp["boxes"][1].set_alpha(0.6)
+        bp["fliers"][0].set_markerfacecolor(DIM2D_COLOR)
+        bp["fliers"][1].set_markerfacecolor(DIM3D_COLOR)
+
+        ax.axhline(1.0, color="gray", linestyle="--", linewidth=1.0)
+        ax.set_title(title, fontsize=FONT_SIZE_LABEL)
+        ax.set_ylabel("fold-change from WT mean" if ax is axes[0] else "",
+                      fontsize=FONT_SIZE_LABEL - 2)
+        ax.tick_params(axis="x", labelsize=FONT_SIZE_LABEL - 1)
 
     fig.tight_layout()
     return fig
@@ -195,13 +246,17 @@ def main() -> None:
     tbl.to_csv(csv_path, index=False)
     print(f"\nTable saved to {csv_path}")
 
-    for genotype, stem in [("wt", "figS_2d_vs_3d_wt_panel"), ("mudmut", "figS_2d_vs_3d_mudmut_panel")]:
-        fig = make_genotype_histogram_panel(df_2d, df_3d, genotype)
-        for ext in ("pdf", "png"):
-            out = FIG_DIR / f"{stem}.{ext}"
-            fig.savefig(out, bbox_inches="tight")
-            print(f"Figure saved to {out}")
-        plt.close(fig)
+    for genotype, stem in [("wt", "figS_2d_vs_3d_wt"), ("mudmut", "figS_2d_vs_3d_mudmut")]:
+        for maker, suffix in [
+            (make_genotype_histogram_panel, "hist_panel"),
+            (make_genotype_boxplot_panel,   "box_panel"),
+        ]:
+            fig = maker(df_2d, df_3d, genotype)
+            for ext in ("pdf", "png"):
+                out = FIG_DIR / f"{stem}_{suffix}.{ext}"
+                fig.savefig(out, bbox_inches="tight")
+                print(f"Figure saved to {out}")
+            plt.close(fig)
 
 
 if __name__ == "__main__":
