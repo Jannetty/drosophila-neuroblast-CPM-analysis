@@ -99,6 +99,58 @@ def build_table(df_2d: pd.DataFrame, df_3d: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def make_genotype_histogram_panel(
+    df_2d: pd.DataFrame,
+    df_3d: pd.DataFrame,
+    genotype: str,
+) -> plt.Figure:
+    metric_cols = ["n_dpn", "dpn_area", "avg_dpn_area", "lin_area", "n_pros"]
+    metric_titles = [
+        "# neuroblasts\n(dpn)",
+        "total NB\narea / volume",
+        "avg NB area /\nvolume per cell",
+        "lineage\narea / volume",
+        "# non-neuroblasts\n(pros)",
+    ]
+    label = "WT" if genotype == "wt" else "mudmut"
+
+    fig, axes = plt.subplots(1, 5, figsize=(18, 4))
+    fig.suptitle(f"{label} lineages: 2D vs 3D representations", fontsize=FONT_SIZE_TITLE)
+
+    for ax, col, title in zip(axes, metric_cols, metric_titles):
+        wt_mean_2d = df_2d.loc[df_2d["genotype"] == "wt", col].mean()
+        wt_mean_3d = df_3d.loc[df_3d["genotype"] == "wt", col].mean()
+
+        vals_2d = (df_2d.loc[df_2d["genotype"] == genotype, col] / wt_mean_2d).values
+        vals_3d = (df_3d.loc[df_3d["genotype"] == genotype, col] / wt_mean_3d).values
+
+        all_vals = np.concatenate([vals_2d, vals_3d])
+        lo, hi   = np.nanpercentile(all_vals, 2), np.nanpercentile(all_vals, 98)
+        if hi <= lo:
+            lo, hi = lo - 0.5, hi + 0.5
+        bins     = np.linspace(lo, hi, 20)
+
+        ax.hist(vals_2d, bins=bins, alpha=0.5, color=DIM2D_COLOR, edgecolor=DIM2D_COLOR,
+                linewidth=1.2, label="2D", density=True)
+        ax.hist(vals_3d, bins=bins, alpha=0.0, color=DIM3D_COLOR, edgecolor=DIM3D_COLOR,
+                linewidth=1.5, hatch="///", label="3D", density=True)
+
+        ax.axvline(1.0, color="gray", linestyle="--", linewidth=1.0)
+        ax.set_xlabel("fold-change from WT mean", fontsize=FONT_SIZE_LABEL - 2)
+        ax.set_title(title, fontsize=FONT_SIZE_LABEL)
+        ax.set_ylabel("density" if ax is axes[0] else "", fontsize=FONT_SIZE_LABEL - 2)
+
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, fc=DIM2D_COLOR, alpha=0.5, label="2D (area, µm²)"),
+        plt.Rectangle((0, 0), 1, 1, fc="none", ec=DIM3D_COLOR, hatch="///",
+                       linewidth=1.5, label="3D (volume, µm³)"),
+    ]
+    axes[-1].legend(handles=handles, loc="upper right", fontsize=FONT_SIZE_LABEL - 3, frameon=False)
+
+    fig.tight_layout()
+    return fig
+
+
 METRICS = [
     ("n_dpn",        "# neuroblasts",           "fold-change from WT"),
     ("dpn_area",     "total NB area/vol",        "fold-change from WT"),
