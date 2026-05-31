@@ -158,3 +158,49 @@ METRICS = [
     ("lin_area",     "lineage area/vol",         "fold-change from WT"),
     ("n_pros",       "# non-neuroblasts",        "fold-change from WT"),
 ]
+
+
+def print_table(tbl: pd.DataFrame) -> None:
+    pivot_rows = []
+    for feat in ["n_dpn", "dpn_area", "avg_dpn_area", "lin_area", "n_pros"]:
+        r2 = tbl[(tbl["feature"] == feat) & (tbl["dim"] == "2D")].iloc[0]
+        r3 = tbl[(tbl["feature"] == feat) & (tbl["dim"] == "3D")].iloc[0]
+        pivot_rows.append({
+            "Feature":           feat,
+            "Biological metric": r2["metric"],
+            "WT mean (2D)":      f"{r2['wt_mean']:.2f}",
+            "mudmut mean (2D)":  f"{r2['mudmut_mean']:.2f}",
+            "FC (2D)":           f"{r2['fold_change']:.2f}x",
+            "p (MWU) 2D":        r2["p_mwu_fmt"],
+            "WT mean (3D)":      f"{r3['wt_mean']:.2f}",
+            "mudmut mean (3D)":  f"{r3['mudmut_mean']:.2f}",
+            "FC (3D)":           f"{r3['fold_change']:.2f}x",
+            "p (MWU) 3D":        r3["p_mwu_fmt"],
+        })
+    print(pd.DataFrame(pivot_rows).to_string(index=False))
+
+
+def main() -> None:
+    print("Loading 2D metrics …")
+    df_2d = load_2d_metrics(PROC_DIR)
+    print("Loading 3D metrics (trimesh volumes) …")
+    df_3d = load_3d_metrics(PROC_DIR)
+
+    tbl = build_table(df_2d, df_3d)
+    print_table(tbl)
+
+    csv_path = FIG_DIR / "figS_2d_vs_3d_metrics_table.csv"
+    tbl.to_csv(csv_path, index=False)
+    print(f"\nTable saved to {csv_path}")
+
+    for genotype, stem in [("wt", "figS_2d_vs_3d_wt_panel"), ("mudmut", "figS_2d_vs_3d_mudmut_panel")]:
+        fig = make_genotype_histogram_panel(df_2d, df_3d, genotype)
+        for ext in ("pdf", "png"):
+            out = FIG_DIR / f"{stem}.{ext}"
+            fig.savefig(out, bbox_inches="tight")
+            print(f"Figure saved to {out}")
+        plt.close(fig)
+
+
+if __name__ == "__main__":
+    main()
