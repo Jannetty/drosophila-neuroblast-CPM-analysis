@@ -44,3 +44,11 @@ def test_load_3d_metrics_lin_area_positive():
 
     df3d = load_3d_metrics(PROC_DIR)
     assert (df3d["lin_area"] > 0).all()
+
+
+def test_build_table_fold_change():
+    from make_supp_2d_vs_3d_metrics import load_2d_metrics, load_3d_metrics, build_table
+
+    tbl = build_table(load_2d_metrics(PROC_DIR), load_3d_metrics(PROC_DIR))
+    row = tbl[(tbl["feature"] == "n_dpn") & (tbl["dim"] == "2D")].iloc[0]
+    assert abs(row["fold_change"] - row["mudmut_mean"] / row["wt_mean"]) < 1e-10

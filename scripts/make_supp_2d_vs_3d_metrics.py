@@ -61,6 +61,44 @@ def load_2d_metrics(proc_dir: Path) -> pd.DataFrame:
     return df[["lineage_id", "genotype", "n_dpn", "dpn_area", "avg_dpn_area", "lin_area", "n_pros"]].copy()
 
 
+def _fmt_p(p: float) -> str:
+    if p < 0.001:
+        return "<0.001"
+    if p < 0.01:
+        return f"{p:.3f}"
+    return f"{p:.2f}"
+
+
+def build_table(df_2d: pd.DataFrame, df_3d: pd.DataFrame) -> pd.DataFrame:
+    metric_labels = {
+        "n_dpn":        "# neuroblasts (dpn)",
+        "dpn_area":     "Total NB area/volume",
+        "avg_dpn_area": "Avg NB area/volume",
+        "lin_area":     "Lineage area/volume",
+        "n_pros":       "# non-neuroblasts (pros)",
+    }
+    rows = []
+    for col, label in metric_labels.items():
+        for dim, df in [("2D", df_2d), ("3D", df_3d)]:
+            wt_vals  = df.loc[df["genotype"] == "wt",     col].values.astype(float)
+            mud_vals = df.loc[df["genotype"] == "mudmut", col].values.astype(float)
+            wt_mean  = wt_vals.mean()
+            mud_mean = mud_vals.mean()
+            fc       = mud_mean / wt_mean
+            _, p     = mannwhitneyu(wt_vals, mud_vals, alternative="two-sided")
+            rows.append({
+                "feature":     col,
+                "metric":      label,
+                "dim":         dim,
+                "wt_mean":     wt_mean,
+                "mudmut_mean": mud_mean,
+                "fold_change": fc,
+                "p_mwu":       p,
+                "p_mwu_fmt":   _fmt_p(p),
+            })
+    return pd.DataFrame(rows)
+
+
 METRICS = [
     ("n_dpn",        "# neuroblasts",           "fold-change from WT"),
     ("dpn_area",     "total NB area/vol",        "fold-change from WT"),
