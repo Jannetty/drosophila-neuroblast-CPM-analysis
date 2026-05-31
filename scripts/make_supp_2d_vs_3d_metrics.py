@@ -17,8 +17,10 @@ from _style import RCPARAMS, FONT_SIZE_TITLE, FONT_SIZE_LABEL
 
 plt.rcParams.update(RCPARAMS)
 
+import os as _os
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
-PROC_DIR = REPO_ROOT / "data" / "exp" / "processed"
+PROC_DIR = REPO_ROOT / _os.environ.get("EXP_PROC_DIR", "data/exp/processed")
 FIG_DIR = REPO_ROOT / "docs" / "tex_draft" / "figures"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
