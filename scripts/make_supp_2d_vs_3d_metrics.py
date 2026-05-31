@@ -134,7 +134,7 @@ def make_genotype_histogram_panel(
 
         ax.hist(vals_2d, bins=bins, alpha=0.5, color=DIM2D_COLOR, edgecolor=DIM2D_COLOR,
                 linewidth=1.2, label="2D", density=True)
-        ax.hist(vals_3d, bins=bins, alpha=0.0, color=DIM3D_COLOR, edgecolor=DIM3D_COLOR,
+        ax.hist(vals_3d, bins=bins, facecolor="none", edgecolor=DIM3D_COLOR,
                 linewidth=1.5, hatch="///", label="3D", density=True)
 
         ax.axvline(1.0, color="gray", linestyle="--", linewidth=1.0)
