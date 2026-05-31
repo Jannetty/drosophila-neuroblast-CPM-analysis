@@ -27,3 +27,20 @@ def test_load_2d_metrics_only_wt_mudmut():
 
     df = load_2d_metrics(PROC_DIR)
     assert set(df["genotype"].unique()) <= {"wt", "mudmut"}
+
+
+def test_load_3d_metrics_n_dpn_matches_index():
+    from make_supp_2d_vs_3d_metrics import load_3d_metrics
+
+    df3d = load_3d_metrics(PROC_DIR)
+    index = pd.read_csv(PROC_DIR / "lineage_index.csv")
+    index = index[index["genotype"].isin(["wt", "mudmut"])]
+    merged = df3d.merge(index[["lineage_id", "n_dpn"]], on="lineage_id", suffixes=("_3d", "_idx"))
+    assert (merged["n_dpn_3d"] == merged["n_dpn_idx"]).all()
+
+
+def test_load_3d_metrics_lin_area_positive():
+    from make_supp_2d_vs_3d_metrics import load_3d_metrics
+
+    df3d = load_3d_metrics(PROC_DIR)
+    assert (df3d["lin_area"] > 0).all()

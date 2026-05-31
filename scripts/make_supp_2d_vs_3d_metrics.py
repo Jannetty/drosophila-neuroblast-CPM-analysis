@@ -27,6 +27,30 @@ GENOTYPES = ["wt", "mudmut"]
 DIM2D_COLOR = "#4C72B0"
 DIM3D_COLOR = "#DD8452"
 
+def load_3d_metrics(proc_dir: Path) -> pd.DataFrame:
+    index = pd.read_csv(proc_dir / "lineage_index.csv")
+    index = index[index["genotype"].isin(GENOTYPES)].copy()
+
+    rows = []
+    for _, row in index.iterrows():
+        npz_path = proc_dir / "meshes" / row["genotype"] / f"{row['lobe']}_{row['lineage_idx']}.npz"
+        npz = np.load(npz_path)
+        dpn_vols = npz["dpn_volumes_um3"]
+        pros_vols = npz["pros_volumes_um3"]
+        mesh = trimesh.Trimesh(vertices=npz["lin_vertices"], faces=npz["lin_faces"], process=False)
+        lin_vol = abs(float(mesh.volume))
+        rows.append({
+            "lineage_id": int(row["lineage_id"]),
+            "genotype": row["genotype"],
+            "n_dpn": len(dpn_vols),
+            "dpn_area": float(dpn_vols.sum()),
+            "avg_dpn_area": float(dpn_vols.mean()),
+            "lin_area": lin_vol,
+            "n_pros": len(pros_vols),
+        })
+    return pd.DataFrame(rows)
+
+
 def load_2d_metrics(proc_dir: Path) -> pd.DataFrame:
     df = pd.read_csv(proc_dir / "metrics.csv")
     df = df[df["genotype"].isin(GENOTYPES)].copy()
