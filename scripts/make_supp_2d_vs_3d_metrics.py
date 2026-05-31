@@ -187,12 +187,12 @@ def make_genotype_boxplot_panel(
             capprops=dict(linewidth=1.2),
             flierprops=dict(marker="o", markersize=3, linestyle="none", alpha=0.5),
         )
-        bp["boxes"][0].set_facecolor(DIM2D_COLOR)
-        bp["boxes"][0].set_alpha(0.6)
-        bp["boxes"][1].set_facecolor(DIM3D_COLOR)
-        bp["boxes"][1].set_alpha(0.6)
-        bp["fliers"][0].set_markerfacecolor(DIM2D_COLOR)
-        bp["fliers"][1].set_markerfacecolor(DIM3D_COLOR)
+        bp["boxes"][0].set_facecolor("#aaaaaa")
+        bp["boxes"][0].set_alpha(0.8)
+        bp["boxes"][1].set_facecolor("#444444")
+        bp["boxes"][1].set_alpha(0.8)
+        bp["fliers"][0].set_markerfacecolor("#aaaaaa")
+        bp["fliers"][1].set_markerfacecolor("#444444")
 
         ax.axhline(1.0, color="gray", linestyle="--", linewidth=1.0)
         ax.set_title(title, fontsize=FONT_SIZE_LABEL)
