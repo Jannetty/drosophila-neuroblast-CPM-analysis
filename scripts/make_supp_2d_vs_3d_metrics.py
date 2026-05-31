@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import trimesh
-from scipy.stats import mannwhitneyu
+from scipy.stats import wilcoxon
 
 matplotlib.use("Agg")
 
@@ -64,6 +64,8 @@ def load_2d_metrics(proc_dir: Path) -> pd.DataFrame:
 
 
 def _fmt_p(p: float) -> str:
+    if np.isnan(p):
+        return "N/A"
     if p < 0.001:
         return "<0.001"
     if p < 0.01:
@@ -81,23 +83,39 @@ def build_table(df_2d: pd.DataFrame, df_3d: pd.DataFrame) -> pd.DataFrame:
     }
     rows = []
     for col, label in metric_labels.items():
-        for dim, df in [("2D", df_2d), ("3D", df_3d)]:
-            wt_vals  = df.loc[df["genotype"] == "wt",     col].values.astype(float)
-            mud_vals = df.loc[df["genotype"] == "mudmut", col].values.astype(float)
-            wt_mean  = wt_vals.mean()
-            mud_mean = mud_vals.mean()
-            fc       = mud_mean / wt_mean
-            _, p     = mannwhitneyu(wt_vals, mud_vals, alternative="two-sided")
-            rows.append({
-                "feature":     col,
-                "metric":      label,
-                "dim":         dim,
-                "wt_mean":     wt_mean,
-                "mudmut_mean": mud_mean,
-                "fold_change": fc,
-                "p_mwu":       p,
-                "p_mwu_fmt":   _fmt_p(p),
-            })
+        wt_2d   = df_2d.loc[df_2d["genotype"] == "wt",     col].values.astype(float)
+        mud_2d  = df_2d.loc[df_2d["genotype"] == "mudmut", col].values.astype(float)
+        wt_3d   = df_3d.loc[df_3d["genotype"] == "wt",     col].values.astype(float)
+        mud_3d  = df_3d.loc[df_3d["genotype"] == "mudmut", col].values.astype(float)
+
+        wt_mean_2d  = wt_2d.mean()
+        wt_mean_3d  = wt_3d.mean()
+
+        # paired Wilcoxon: 2D fold-change vs 3D fold-change within each genotype
+        # returns NaN when all differences are zero (e.g. count metrics identical in 2D and 3D)
+        def _wilcoxon_p(a: np.ndarray, b: np.ndarray) -> float:
+            diffs = a - b
+            if np.all(diffs == 0):
+                return float("nan")
+            return float(wilcoxon(a, b).pvalue)
+
+        p_wt  = _wilcoxon_p(wt_2d  / wt_mean_2d, wt_3d  / wt_mean_3d)
+        p_mud = _wilcoxon_p(mud_2d / wt_mean_2d, mud_3d / wt_mean_3d)
+
+        rows.append({
+            "feature":        col,
+            "metric":         label,
+            "wt_mean_2d":     wt_mean_2d,
+            "mudmut_mean_2d": mud_2d.mean(),
+            "fc_2d":          mud_2d.mean() / wt_mean_2d,
+            "wt_mean_3d":     wt_mean_3d,
+            "mudmut_mean_3d": mud_3d.mean(),
+            "fc_3d":          mud_3d.mean() / wt_mean_3d,
+            "p_wt":           p_wt,
+            "p_wt_fmt":       _fmt_p(p_wt),
+            "p_mud":          p_mud,
+            "p_mud_fmt":      _fmt_p(p_mud),
+        })
     return pd.DataFrame(rows)
 
 
@@ -179,7 +197,7 @@ def make_genotype_boxplot_panel(
 
         bp = ax.boxplot(
             [vals_2d, vals_3d],
-            labels=["2D", "3D"],
+            tick_labels=["2D", "3D"],
             patch_artist=True,
             widths=0.5,
             medianprops=dict(color="black", linewidth=1.5),
@@ -214,23 +232,21 @@ METRICS = [
 
 
 def print_table(tbl: pd.DataFrame) -> None:
-    pivot_rows = []
-    for feat in ["n_dpn", "dpn_area", "avg_dpn_area", "lin_area", "n_pros"]:
-        r2 = tbl[(tbl["feature"] == feat) & (tbl["dim"] == "2D")].iloc[0]
-        r3 = tbl[(tbl["feature"] == feat) & (tbl["dim"] == "3D")].iloc[0]
-        pivot_rows.append({
-            "Feature":           feat,
-            "Biological metric": r2["metric"],
-            "WT mean (2D)":      f"{r2['wt_mean']:.2f}",
-            "mudmut mean (2D)":  f"{r2['mudmut_mean']:.2f}",
-            "FC (2D)":           f"{r2['fold_change']:.2f}x",
-            "p (MWU) 2D":        r2["p_mwu_fmt"],
-            "WT mean (3D)":      f"{r3['wt_mean']:.2f}",
-            "mudmut mean (3D)":  f"{r3['mudmut_mean']:.2f}",
-            "FC (3D)":           f"{r3['fold_change']:.2f}x",
-            "p (MWU) 3D":        r3["p_mwu_fmt"],
+    rows = []
+    for _, r in tbl.iterrows():
+        rows.append({
+            "Feature":              r["feature"],
+            "Biological metric":    r["metric"],
+            "WT mean (2D)":         f"{r['wt_mean_2d']:.2f}",
+            "mudmut mean (2D)":     f"{r['mudmut_mean_2d']:.2f}",
+            "FC (2D)":              f"{r['fc_2d']:.2f}x",
+            "WT mean (3D)":         f"{r['wt_mean_3d']:.2f}",
+            "mudmut mean (3D)":     f"{r['mudmut_mean_3d']:.2f}",
+            "FC (3D)":              f"{r['fc_3d']:.2f}x",
+            "p (2D vs 3D) WT":      r["p_wt_fmt"],
+            "p (2D vs 3D) mudmut":  r["p_mud_fmt"],
         })
-    print(pd.DataFrame(pivot_rows).to_string(index=False))
+    print(pd.DataFrame(rows).to_string(index=False))
 
 
 def main() -> None:
