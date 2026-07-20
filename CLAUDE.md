@@ -16,6 +16,16 @@ Do not update the design plans in `docs/plans/design_plans/` — those are
 frozen records of original intent. The user will explicitly request changes
 to design plans when needed; agents executing tasks should not touch them.
 
+## Design plans — location and naming
+
+When a brainstorming/design session produces a new design plan (spec), write it
+to `docs/plans/design_plans/` following the existing convention: a sequential
+integer prefix on the next available number, then a snake_case topic
+(e.g. `22_nb_perimeter_fraction_combined_panel.md`). Do NOT create a
+`docs/superpowers/` (or `docs/superpowers/specs/`) directory — design plans live
+in `docs/plans/design_plans/`, never under `superpowers/`. Existing numbered
+plans remain frozen per the note above; this concerns where new plans go.
+
 ## Code style
 
 - Keep modules flat and minimal. Do not add abstractions beyond what the task requires.
