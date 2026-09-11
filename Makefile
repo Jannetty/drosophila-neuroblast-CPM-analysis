@@ -130,6 +130,10 @@ calibrate-clean:
 # After running, open the SVGs in Inkscape to realign panels as needed.
 # The normalizer is not applied to fig4 (Panel A is a PNG embed, safe).
 
+# fig1 and fig2 both execute figure12_paper_figures.ipynb with nbconvert
+# --inplace, so .NOTPARALLEL keeps them from racing on that shared notebook.
+.NOTPARALLEL:
+
 figures: fig1 fig2 fig3 fig4 fig5 figS-2d-vs-3d
 
 figures-convex: export EXP_PROC_DIR = data/exp/processed

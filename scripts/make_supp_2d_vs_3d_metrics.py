@@ -155,16 +155,16 @@ def make_genotype_histogram_panel(
         ax.hist(vals_3d, bins=bins, facecolor="none", edgecolor=DIM3D_COLOR,
                 linewidth=1.5, hatch="///", label="3D", density=True)
         ax.axvline(1.0, color="gray", linestyle="--", linewidth=1.0)
-        ax.set_xlabel("fold-change from WT mean", fontsize=FONT_SIZE_LABEL - 2)
+        ax.set_xlabel("fold-change from WT mean", fontsize=FONT_SIZE_LABEL)
         ax.set_title(title, fontsize=FONT_SIZE_LABEL)
-        ax.set_ylabel("density" if ax is axes[0] else "", fontsize=FONT_SIZE_LABEL - 2)
+        ax.set_ylabel("density" if ax is axes[0] else "", fontsize=FONT_SIZE_LABEL)
 
     handles = [
         plt.Rectangle((0, 0), 1, 1, fc=DIM2D_COLOR, alpha=0.5, label="2D (area, µm²)"),
         plt.Rectangle((0, 0), 1, 1, fc="none", ec=DIM3D_COLOR, hatch="///",
                        linewidth=1.5, label="3D (volume, µm³)"),
     ]
-    axes[-1].legend(handles=handles, loc="upper right", fontsize=FONT_SIZE_LABEL - 3, frameon=False)
+    axes[-1].legend(handles=handles, loc="upper right", fontsize=FONT_SIZE_LABEL, frameon=False)
 
     fig.tight_layout()
     return fig
@@ -215,8 +215,8 @@ def make_genotype_boxplot_panel(
         ax.axhline(1.0, color="gray", linestyle="--", linewidth=1.0)
         ax.set_title(title, fontsize=FONT_SIZE_LABEL)
         ax.set_ylabel("fold-change from WT mean" if ax is axes[0] else "",
-                      fontsize=FONT_SIZE_LABEL - 2)
-        ax.tick_params(axis="x", labelsize=FONT_SIZE_LABEL - 1)
+                      fontsize=FONT_SIZE_LABEL)
+        ax.tick_params(axis="x", labelsize=FONT_SIZE_LABEL)
 
     fig.tight_layout()
     return fig

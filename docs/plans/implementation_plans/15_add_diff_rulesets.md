@@ -1,8 +1,8 @@
 # Implementation Record 15 — Add differentiation-rule conditions to figure 2
 
 **Design plan:** `docs/plans/15_add_diff_rulesets.md`
-**Started:** —
-**Completed:** —
+**Started:** 2026-05-12
+**Completed:** 2026-05-12 (step 7 deferred — requires Inkscape)
 
 ---
 
@@ -24,9 +24,9 @@ Rules:
 
 ## Step 1 — Re-run decoupling preprocessing
 
-**Status:** —
-**Date:** —
-**Done by:** —
+**Status:** `DONE`
+**Date:** 2026-05-12
+**Done by:** Claude
 
 Planned: `make summarize-decouple`
 
@@ -34,6 +34,7 @@ Verify: `cut -d',' -f1 data/sim/processed_decoupling/sim_metrics_last.csv | grep
 Expected: both condition names appear.
 
 What was done:
+- [x] Ran `make summarize-decouple`; both conditions now appear in sim_metrics_last.csv (50 rows each, 100 counting both vcv modes in the timepoint CSV)
 
 Deviations / notes:
 
@@ -41,9 +42,9 @@ Deviations / notes:
 
 ## Step 2 — Add constants to notebook cell
 
-**Status:** —
-**Date:** —
-**Done by:** —
+**Status:** `DONE`
+**Date:** 2026-05-12
+**Done by:** Claude
 
 Planned: In cell `7bc2792c` of `figure12_paper_figures.ipynb`, add:
 - `FIG2_DIFF_CONDITIONS` list
@@ -54,16 +55,18 @@ Planned: In cell `7bc2792c` of `figure12_paper_figures.ipynb`, add:
 - 4th row in `FIG2_LINEAGE_ROWS`
 
 What was done:
+- [x] All constants added via targeted string replacements on extracted cell source, then re-injected with Python
 
 Deviations / notes:
+Verified all 12 key strings present in updated cell before injection.
 
 ---
 
 ## Step 3 — Update `make_figure2_lineages_panel`
 
-**Status:** —
-**Date:** —
-**Done by:** —
+**Status:** `DONE`
+**Date:** 2026-05-12
+**Done by:** Claude
 
 Planned:
 - Increase `figsize` height: `(13.8, 14.0)` → `(13.8, 18.7)`
@@ -73,22 +76,25 @@ Planned:
 - Add per-column render block for the new row
 
 What was done:
+- [x] All four changes applied; `reps` selection also refactored from `if row_title == "Offset shift"` to `if row_title in ("Offset shift", "Differentiation rule")` to share the joint-metric picker
 
 Deviations / notes:
+Combined the `reps` selection into a single `in` check rather than two separate branches — cleaner and equivalent.
 
 ---
 
 ## Step 4 — Update `make_grouped_metric_panel`
 
-**Status:** —
-**Date:** —
-**Done by:** —
+**Status:** `DONE`
+**Date:** 2026-05-12
+**Done by:** Claude
 
 Planned:
 - Fix figsize formula: `len(FIG2_GROUPS)` → `3` (hardcoded baseline)
 - Add `"Differentiation rule": "Differentiation\nrule"` to `title_map`
 
 What was done:
+- [x] Both changes applied
 
 Deviations / notes:
 
@@ -96,9 +102,9 @@ Deviations / notes:
 
 ## Step 5 — Execute notebook and inspect PNGs
 
-**Status:** —
-**Date:** —
-**Done by:** —
+**Status:** `DONE`
+**Date:** 2026-05-12
+**Done by:** Claude
 
 Planned:
 ```
@@ -110,6 +116,7 @@ Check:
 - `figure2_wt_exposure_panel.png` shows 4 groups, wider
 
 What was done:
+- [x] Notebook executed; PNGs verified: geometry panel 4104×5851 (was ~4104×4400 for 3 rows), mixing 3956×1084 (was ~3222×1084 for 3 groups), exposure 3955×1084
 
 Deviations / notes:
 
@@ -117,13 +124,15 @@ Deviations / notes:
 
 ## Step 6 — Run `make fig2` to update SVG
 
-**Status:** —
-**Date:** —
-**Done by:** —
+**Status:** `DONE`
+**Date:** 2026-05-12
+**Done by:** Claude
 
 Planned: `make fig2`
 
 What was done:
+- [x] `make fig2` ran notebook again (idempotent), then compositor, then font normalizer
+- Compositor updated geometry-examples height 147.4 → 193.8 mm; mixing/exposure panels at 111.8 mm wide (unchanged — mixing/exposure panel width is set by scale factor, not group count)
 
 Deviations / notes:
 
@@ -131,7 +140,7 @@ Deviations / notes:
 
 ## Step 7 — Inkscape canvas extension (manual)
 
-**Status:** —
+**Status:** `DEFERRED` — requires human (Inkscape interaction)
 **Date:** —
 **Done by:** —
 
@@ -147,15 +156,17 @@ Deviations / notes:
 
 ## Step 8 — Update PIPELINE.md
 
-**Status:** —
-**Date:** —
-**Done by:** —
+**Status:** `DONE`
+**Date:** 2026-05-12
+**Done by:** Claude
 
 Planned: Add the two new conditions to the decoupling-sweep conditions table.
 
 What was done:
+- [x] Added new "Geometry-decoupling sweep conditions (figure 2)" section documenting all four sweep axes and their conditions, including the new differentiation-rule axis
 
 Deviations / notes:
+No pre-existing table existed; added a full new section before "Cross-step invariants".
 
 ---
 

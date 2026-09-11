@@ -507,3 +507,61 @@ def test_exp_nb_connectivity_chain() -> None:
     assert r["nb_connected"] is True
     assert r["nb_n_components"] == 1
     assert r["nb_n_dpn"] == 3
+
+
+def test_sim_genotype_comes_from_condition_not_sim_id():
+    """wt_* and mudmut_* conditions share sim_id names, so genotype must be read
+    from the condition. Previously VCV_SIM_METADATA hardcoded 'mudmut' for every
+    vcv* sim_id, labelling all WT rows as mudmut."""
+    frame = pd.DataFrame(
+        [
+            {
+                "condition": "wt_divMean0Stdev26",
+                "sim_id": "vcv1_vol_abm",
+                "run_id": "0001",
+                "time_id": 0,
+                "n_dpn": 1.0,
+                "avg_dpn_area_vox": 1.0,
+                "lin_area_vox": 1.0,
+                "n_pros": 1.0,
+                "dpn_area_vox": 1.0,
+            },
+            {
+                "condition": "mudmut_divMean0Stdev50_rotMean0Stdev30",
+                "sim_id": "vcv1_vol_abm",
+                "run_id": "0001",
+                "time_id": 0,
+                "n_dpn": 1.0,
+                "avg_dpn_area_vox": 1.0,
+                "lin_area_vox": 1.0,
+                "n_pros": 1.0,
+                "dpn_area_vox": 1.0,
+            },
+        ]
+    )
+    selected = build_selected_sim_metrics(frame, timepoint=0)
+    by_condition = selected.set_index("condition")["genotype"]
+    assert by_condition["wt_divMean0Stdev26"] == "wt"
+    assert by_condition["mudmut_divMean0Stdev50_rotMean0Stdev30"] == "mudmut"
+
+
+def test_legacy_simNN_genotype_still_comes_from_sim_id():
+    """Legacy condition names carry no genotype prefix, so the simNN series map
+    must still supply it."""
+    frame = pd.DataFrame(
+        [
+            {
+                "condition": "divMean36Stdev30_rotMean0Stdev30",
+                "sim_id": "sim63",
+                "run_id": "0001",
+                "time_id": 0,
+                "n_dpn": 1.0,
+                "avg_dpn_area_vox": 1.0,
+                "lin_area_vox": 1.0,
+                "n_pros": 1.0,
+                "dpn_area_vox": 1.0,
+            }
+        ]
+    )
+    selected = build_selected_sim_metrics(frame, timepoint=0)
+    assert selected.iloc[0]["genotype"] == "wt"

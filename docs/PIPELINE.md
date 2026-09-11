@@ -77,7 +77,15 @@ analysis NPZ and from `lineage_index.csv`. They appear in
 **Geometry** (`geometry.py`): For each kept lineage:
 1. PCA on the lineage hull vertices → mean, e1 (PC1), e2 (PC2).
 2. All vertices projected onto the e1–e2 plane.
-3. Convex hull of the projected lineage vertices, buffered by 0.5 × ds.
+3. Lineage boundary polygon, buffered by 0.5 × ds. Two modes (controlled by
+   `--no-convex-hull` on `preprocess_exp.py`):
+   - **Non-convex (`--no-convex-hull`) — production default:** `unary_union` of all projected triangle
+     faces (`mesh_polygon`) — follows the actual mesh silhouette; connected but
+     non-convex. If the projection is disconnected, falls back to convex hull.
+     Used by `preprocess-data`, `preprocess-exp-nonconvex`, and `figures-nonconvex`.
+   - **Convex hull (script default if `--no-convex-hull` is omitted):** `MultiPoint(pts_2d).convex_hull` — encloses all
+     projected vertices; overfills concave regions of the mesh. Retained for
+     comparison via `figures-convex`.
 4. Sphere-weighted Voronoi rasterization (`sphere_voronoi_rasterize`): each
    cell's 3D mesh volume is used to compute an equivalent sphere radius r_i =
    (3V/(4π))^(1/3). Territory is assigned by additively weighted Voronoi —
@@ -117,12 +125,12 @@ data/exp/processed/
 | `pros_{i}_faces` | (F, 3) | i-th Pros cell faces |
 | `dpn_centroids_3d` | (N_dpn, 3) | Mean vertex position per Dpn cell |
 | `pros_centroids_3d` | (N_pros, 3) | Mean vertex position per Pros cell |
-| `lin_poly_2d` | (P, 2) | Lineage convex hull exterior (µm in PC1/PC2) |
+| `lin_poly_2d` | (P, 2) | Lineage polygon exterior (µm in PC1/PC2); P varies with complexity — convex hull ~5–125 pts, mesh-union can give hundreds |
 | `dpn_centroids_2d` | (N_dpn, 2) | Dpn centroids in µm |
 | `pros_centroids_2d` | (N_pros, 2) | Pros centroids in µm |
 | `dpn_centroids_2d_px` | (N_dpn, 2) | Dpn centroids in canvas pixels |
 | `pros_centroids_2d_px` | (N_pros, 2) | Pros centroids in canvas pixels |
-| `lin_poly_2d_px` | (P, 2) | Hull polygon in canvas pixels |
+| `lin_poly_2d_px` | (P, 2) | Lineage polygon in canvas pixels |
 | `dpn_volumes_um3` | (N_dpn,) | Dpn cell volumes in µm³ (abs of trimesh volume) |
 | `pros_volumes_um3` | (N_pros,) | Pros cell volumes in µm³ (abs of trimesh volume) |
 | `pca_mean` | (3,) | PCA mean (3D) |
@@ -171,7 +179,7 @@ Three views:
 | View | Flag | What it shows |
 |---|---|---|
 | 3D mesh | `--view 3d` (default) | Interactive Plotly figure: lineage hull (grey, 15% opacity), Dpn cells (purple, opaque), Pros cells (teal, 50% opacity) |
-| 2D pre-rasterization | `--view 2d-pre` | Matplotlib: sphere circles (radius from cell volume) at projected centroid positions on lineage hull polygon, coordinates in µm (PC1/PC2) |
+| 2D pre-rasterization | `--view 2d-pre` | Matplotlib: sphere circles (radius from cell volume) at projected centroid positions on lineage outline polygon (non-convex by default; convex hull when `--no-convex-hull` was omitted at preprocessing), coordinates in µm (PC1/PC2) |
 | 2D post-rasterization | `--view 2d-post` | Matplotlib: geo tensor as an RGB image with centroid dots overlaid in pixel coordinates |
 
 The `2d-post` view reads `geo` from the analysis NPZ (via `analysis_row`), not
@@ -503,6 +511,16 @@ Metadata columns are parsed from:
 - `condition` names such as `divMean36Stdev30_rotMean0Stdev30`
 - `sim_id` names such as `sim43`
 
+`genotype` is parsed from the condition prefix (`wt_` / `mudmut_`), not from `sim_id` —
+the `vcv*` sim ids are shared by both genotypes. Legacy `simNN` ids still supply it from
+the series map.
+
+`regulatory_dynamic` takes one of `NONE`, `NB-ABM`, `VOL-ABM`. PDE-like regulation
+was removed from the model on 2026-08-20 and dropped from the dataset and figures on
+2026-09-11 (see `docs/plans/design_plans/25_remove_pde_like.md`); the `NB-PDE` /
+`VOL-PDE` labels survive only in the legacy `simNN` suffix decoder, for reading
+archived data.
+
 Simulation metadata follows the ledger in
 `data/sim/bioparams_rotation_sweep/METADATA.md`.
 
@@ -723,6 +741,80 @@ lineages (91.5%, 95% Wilson CI [81.6%, 96.3%]) have all NBs connected.
 
 ---
 
+## Regulation parameter calibration sweep
+
+**Run:** `make preprocess-calibrate && make analyze-calibrate && make plot-calibrate`
+
+Data lives at `data/sim/calibrate_sweep/` — 48 condition folders, each containing
+50 runs (CELLS + LOCATIONS JSON files directly in the folder, no sim_id subfolder).
+A metadata file `conditions.csv` in the same directory maps each folder name to its
+parameter values.
+
+### Step A — `make preprocess-calibrate`
+
+**Script:** `scripts/preprocess_calibrate.py`
+
+Reads the flat folder structure (unlike the main sweep pipeline which expects a
+`sim_id/` subfolder layer). For each condition, finds the last timepoint per run
+by selecting the highest `time_id` in the filename.
+
+**Output:**
+
+- `data/sim/processed_calibrate/sim_metrics_last.csv` — one row per run
+
+  | Column | Description |
+  |---|---|
+  | `condition` | Folder name (e.g. `vcv1_nb_abm_hm4p0`) |
+  | `run_id` | 4-digit run ID string |
+  | `time_id` | Timepoint integer (last timepoint only) |
+  | `n_dpn` | NB count (pop 1) |
+  | `dpn_area_vox` | Total NB voxel area |
+  | `avg_dpn_area_vox` | Mean NB voxel area per cell |
+  | `n_pros` | Progeny count (pop 2 + pop 3) |
+  | `lin_area_vox` | Total lineage voxel area (NB + progeny) |
+
+- `data/sim/processed_calibrate/sim_run_index.csv` — run → file path mapping
+
+  Columns: `condition, run_id, time_id, cells_path, locs_path`
+
+Area metrics are in raw voxels. Multiply by `DS_UM_PER_VOX² = 0.09` (µm²/vox)
+to convert to µm².
+
+### Step B — `make analyze-calibrate`
+
+**Script:** `scripts/analyze_calibration_alignment.py`
+
+For each condition × metric, computes alignment against experimental mudmut IQR.
+
+**Output:** `data/sim/processed_calibrate/alignment_summary.csv` — one row per condition (48 rows + header).
+
+Per-metric columns (5 metrics × 7 columns each):
+
+| Suffix | Description |
+|---|---|
+| `_sim_median` | Median of sim runs (scaled to µm² for area metrics) |
+| `_sim_q25`, `_sim_q75` | Sim IQR bounds |
+| `_exp_q25`, `_exp_q75` | Exp mudmut IQR bounds |
+| `_in_iqr` | `True` if sim median falls within exp mudmut Q25–Q75 |
+| `_overlap_frac` | Jaccard overlap of sim IQR and exp IQR |
+
+Plus `n_metrics_aligned` (0–5): count of metrics where `_in_iqr` is `True`.
+
+### Step C — `make plot-calibrate`
+
+**Script:** `scripts/plot_calibration_sweep.py`
+
+**Output:** `docs/tex_draft/figures/calibrate_sweep_plots.pdf`
+
+One page per condition (48 pages), ordered by `conditions.csv` row order. Each
+page shows 5 metric subplots (1 row × 5 columns). Per subplot:
+
+- Dark gray boxplot of sim runs (no fliers), log y-axis
+- Red IQR band (axhspan Q25–Q75) + dashed median line for exp mudmut reference
+- Page title includes folder name, VCV version, regulation type, mechanism, and parameter values
+
+---
+
 ## Geometry-decoupling sweep conditions (figure 2)
 
 The decoupling sweep lives at `data/sim/decoupling/` and is preprocessed with:
@@ -749,6 +841,56 @@ downsampled by factor 2 before cropping for display in the geometry-examples pan
 
 Counterfactual conditions (`*_counterfactual`) use `sim_id = vcv0_noreg` and are
 visualised in the supplementary counterfactual figure only.
+
+---
+
+## Step 9 — Figure 5 supplemental connectivity table
+
+**Run:** `make fig5-supp-table`
+
+**Script:** `scripts/generate_connectivity_ci_table.py`
+
+### What it does
+
+Reads `nb_connectivity_metrics.csv` from the adhesion decoupling sweep and computes,
+for each (regulatory dynamic × adhesion × relrot_label) cell, the fraction of runs
+where all NBs formed one connected component and the 95% Wilson score confidence
+interval.
+
+**Wilson CI formula** (z = 1.96):
+
+```
+p_hat  = k / n
+denom  = 1 + z² / n
+center = (p_hat + z² / (2n)) / denom
+margin = z * sqrt(p_hat * (1 - p_hat) / n + z² / (4n²)) / denom
+ci     = [max(0, center − margin), min(1, center + margin)]
+```
+
+Lineages per cell: n = 50. Edge case n = 0 → all outputs NaN.
+
+### Input
+
+`data/sim/processed_decoupling_adhesion/nb_connectivity_metrics.csv`
+
+### Outputs
+
+| File | Description |
+|---|---|
+| `docs/tex_draft/figures/figure5_supp_connectivity_ci_table.csv` | Long-form CSV, 12 rows (1 reg dynamic × 3 adhesion × 4 relrot) |
+| `docs/tex_draft/figures/figure5_supp_connectivity_ci_table.tex` | Wide LaTeX table fragment; one `tabular` environment for VOL-ABM |
+
+**CSV columns:** `regulatory_dynamic, adhesion, relrot_label, n_connected, n_total, frac, ci_lo, ci_hi`
+
+**LaTeX layout:** rows = adhesion (J=50/40/20), columns = relrot (off/0°/45°/90°),
+cell = `frac [ci_lo, ci_hi]`.
+
+### CLI options
+
+```
+--proc-dir  PATH   default: data/sim/processed_decoupling_adhesion
+--out-dir   PATH   default: docs/tex_draft/figures
+```
 
 ---
 

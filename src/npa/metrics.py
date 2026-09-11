@@ -130,13 +130,16 @@ EXP_SUMMARY_COLUMNS = [
 ]
 
 CONDITION_PATTERN = re.compile(
-    r"^(?:(?:wt|mudmut)_)?"
+    r"^(?:(?P<genotype>wt|mudmut)_)?"
     r"(?:adh(?P<adhesion>\d+)_)?"
     r"divMean(?P<div_mean>-?\d+)Stdev(?P<div_stdev>-?\d+)"
     r"(?:_rotMean(?P<rot_mean>-?\d+)Stdev(?P<rot_stdev>-?\d+))?"
     r"(?:_noadhesion|_relrotMean(?P<relrot_mean>\d+)|_relrot|_yoffset\d+)*$"
 )
 
+# Decodes the legacy simNN ids (calibrate_sweep, archived bioparams runs). Suffixes
+# 4 and 5 are retained so that archived data still reads back with its original
+# labels; no current condition produces them.
 REGULATORY_DYNAMIC_BY_SUFFIX = {
     1: "NONE",
     2: "NB-ABM",
@@ -421,6 +424,7 @@ def _condition_metadata(condition: str) -> dict[str, Any]:
             "rot_stdev": np.nan,
             "relrot": False,
             "relrot_mean": np.nan,
+            "genotype_from_condition": None,
         }
     rot_mean = match.group("rot_mean")
     rot_stdev = match.group("rot_stdev")
@@ -434,26 +438,25 @@ def _condition_metadata(condition: str) -> dict[str, Any]:
         "rot_stdev": int(rot_stdev) if rot_stdev is not None else 0,
         "relrot": "_relrot" in condition,
         "relrot_mean": int(relrot_mean_str) if relrot_mean_str is not None else np.nan,
+        "genotype_from_condition": match.group("genotype"),
     }
 
 
 VCV_SIM_METADATA: dict[str, dict[str, Any]] = {
-    "vcv1_noreg":   {"genotype": "mudmut", "critical_volume_mode": 1, "regulatory_dynamic": "NONE"},
-    "vcv1_nb_abm":  {"genotype": "mudmut", "critical_volume_mode": 1, "regulatory_dynamic": "NB-ABM"},
-    "vcv1_vol_abm": {"genotype": "mudmut", "critical_volume_mode": 1, "regulatory_dynamic": "VOL-ABM"},
-    "vcv1_nb_pde":  {"genotype": "mudmut", "critical_volume_mode": 1, "regulatory_dynamic": "NB-PDE"},
-    "vcv1_vol_pde": {"genotype": "mudmut", "critical_volume_mode": 1, "regulatory_dynamic": "VOL-PDE"},
-    "vcv0_noreg":   {"genotype": "mudmut", "critical_volume_mode": 0, "regulatory_dynamic": "NONE"},
-    "vcv0_nb_abm":  {"genotype": "mudmut", "critical_volume_mode": 0, "regulatory_dynamic": "NB-ABM"},
-    "vcv0_vol_abm": {"genotype": "mudmut", "critical_volume_mode": 0, "regulatory_dynamic": "VOL-ABM"},
-    "vcv0_nb_pde":  {"genotype": "mudmut", "critical_volume_mode": 0, "regulatory_dynamic": "NB-PDE"},
-    "vcv0_vol_pde": {"genotype": "mudmut", "critical_volume_mode": 0, "regulatory_dynamic": "VOL-PDE"},
+    "vcv1_noreg":   {"critical_volume_mode": 1, "regulatory_dynamic": "NONE"},
+    "vcv1_nb_abm":  {"critical_volume_mode": 1, "regulatory_dynamic": "NB-ABM"},
+    "vcv1_vol_abm": {"critical_volume_mode": 1, "regulatory_dynamic": "VOL-ABM"},
+    "vcv0_noreg":   {"critical_volume_mode": 0, "regulatory_dynamic": "NONE"},
+    "vcv0_nb_abm":  {"critical_volume_mode": 0, "regulatory_dynamic": "NB-ABM"},
+    "vcv0_vol_abm": {"critical_volume_mode": 0, "regulatory_dynamic": "VOL-ABM"},
 }
 
 
 def _sim_metadata(sim_id: str) -> dict[str, Any]:
     if sim_id in VCV_SIM_METADATA:
-        return dict(VCV_SIM_METADATA[sim_id])
+        # vcv* ids are shared by the wt and mudmut conditions, so they carry no
+        # genotype of their own; build_selected_sim_metrics fills it from the condition.
+        return {"genotype": None, **VCV_SIM_METADATA[sim_id]}
     digits = "".join(ch for ch in sim_id if ch.isdigit())
     if len(digits) != 2:
         return {
@@ -524,6 +527,10 @@ def build_selected_sim_metrics(
         [selected.reset_index(drop=True), condition_meta, sim_meta],
         axis=1,
     )
+    # wt_* and mudmut_* conditions share sim_id names, so the condition is the only
+    # reliable source of genotype. Legacy simNN conditions carry no prefix and fall
+    # back to the sim_id map.
+    merged["genotype"] = merged["genotype_from_condition"].fillna(merged["genotype"])
     merged = merged.sort_values(
         ["condition", "sim_id", "run_id", "time_id"],
         kind="stable",

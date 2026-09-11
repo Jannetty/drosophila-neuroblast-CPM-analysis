@@ -20,7 +20,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-REG_DYN_ORDER = ["VOL-ABM", "VOL-PDE"]
+REG_DYN_ORDER = ["VOL-ABM"]
 ADH_ORDER = [50, 40, 20]
 RELROT_ORDER = ["off", "mu=0", "mu=45", "mu=90"]
 RELROT_TEX = {"off": "off", "mu=0": r"$\mu$=0°", "mu=45": r"$\mu$=45°", "mu=90": r"$\mu$=90°"}
